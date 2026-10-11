@@ -69,6 +69,7 @@ function Agent:init(session)
     self.ctx = { session = session }
     self.queue = {}
     self.state = "idle"
+    self.compaction = nil
     self.confirm = function()
         return false
     end
@@ -83,6 +84,25 @@ function Agent:elapsed()
     return self.started and sys.os.clock() - self.started or nil
 end
 
+function Agent:compacting()
+    return self.compaction ~= nil
+end
+
+function Agent:compaction_elapsed()
+    return self.compaction and sys.os.clock() - self.compaction.started or nil
+end
+
+function Agent:compaction_started(count)
+    self.compaction = { started = sys.os.clock(), messages = count }
+    event.emit("status_changed", {})
+    return self.compaction
+end
+
+function Agent:compaction_finished()
+    self.compaction = nil
+    event.emit("status_changed", {})
+end
+
 function Agent:begin()
     self.state = "working"
     self.started = sys.os.clock()
@@ -95,6 +115,7 @@ function Agent:finish(turn)
     self.task = nil
     self.turn = nil
     self.running = nil
+    self.compaction = nil
     event.emit("tool_progress", {})
     event.emit("status_changed", {})
     if turn then
@@ -465,10 +486,17 @@ function Agent:fold(messages)
     if not budget then
         return nil
     end
-    return compactor.fold(messages, budget, self:keep_recent())
+    local compaction = self:compaction_started()
+    local folded = compactor.fold(messages, budget, self:keep_recent(), compaction)
+    self:compaction_finished()
+    return folded
 end
 
 function Agent:compact_if_needed()
+    if self.skipped_compaction then
+        self.skipped_compaction = nil
+        return false
+    end
     if not context.compaction.enabled or loop_provider() then
         return false
     end
@@ -506,10 +534,15 @@ function Agent:compact(keep)
     for index = start, cut.compacted do
         earlier[#earlier + 1] = stored[index].message
     end
+    local compaction = self:compaction_started(cut.span)
     self:begin()
-    task.spawn_in(self.ctx, function()
+    self.task = task.spawn_in(self.ctx, function()
         local files = view.merge_files(view.files_touched(earlier), carried)
         local ok, done = pcall(compactor.generate, earlier, previous)
+        if compaction.cancelled then
+            return
+        end
+        self:compaction_finished()
         if ok and done then
             if done.usage then
                 self.session:add_cost(done.usage)
@@ -556,6 +589,16 @@ function Agent:interrupt()
     if self.shell then
         self.shell.cancelled = true
         self.shell.proc:kill()
+        return true
+    end
+    if self.compaction and not self.turn then
+        self.compaction.cancelled = true
+        self.skipped_compaction = self:queued()
+        if self.task then
+            self.task:cancel()
+        end
+        self:finish(false)
+        self:send_queued()
         return true
     end
     if not self.task then

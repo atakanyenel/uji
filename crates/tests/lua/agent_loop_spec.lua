@@ -1,6 +1,9 @@
 local agent = require("support.agent")
+local app = require("uji.core.app")
 local sandbox = require("support.sandbox")
+local screen = require("support.ui")
 local server = require("support.server")
+local wait = require("support.wait")
 
 local function run(url, opts)
     sandbox.file("notes.txt", "alpha\nline two\ngamma\n")
@@ -20,6 +23,24 @@ local function compacted(mock)
         end
     end
     return false
+end
+
+-- A model that takes its time over the summary, so a test can look at uji
+-- while the compaction is in flight.
+local function summarising()
+    local mock = agent.serve(function()
+        return server.text("done")
+    end, { summary = 0.5 })
+    agent.provider(mock.url, 4000)
+    uji.model.use({ provider = "test", model = "m" })
+    return mock
+end
+
+local function seeded()
+    for turn = 0, 5 do
+        app.session:append({ type = "user", text = "question " .. turn })
+        app.session:append({ type = "assistant", text = string.rep("answer ", 400) })
+    end
 end
 
 it("retries a failed request until it succeeds", function()
@@ -275,6 +296,53 @@ it("sends a message that waits for compaction once it is done", { timeout = 20 }
     local sent = turns[1].body.messages
     assert.equal("go", sent[#sent].content)
     assert.equal("done", agent.last_answer(messages))
+end)
+
+it("shows the compaction while the summary is written, and stops it on esc", { timeout = 20 }, function()
+    summarising()
+    seeded()
+    uji.session.submit("go")
+    wait.eventually(function()
+        return app.agent:compacting()
+    end)
+    assert.is_true(app.agent.compaction.messages > 0, "the compaction says how many messages it folds")
+    assert.truthy(table.concat(screen.rows(true)):find("Compacting the conversation", 1, true))
+    assert.is_true(app.agent:interrupt())
+    assert.is_nil(app.agent.compaction)
+    wait.eventually(function()
+        return not app.agent:working()
+    end)
+    for _, message in ipairs(app.session:messages()) do
+        assert.is_not_equal("compaction", message.type)
+    end
+end)
+
+it("shows the compaction a turn folds on its own", { timeout = 20 }, function()
+    summarising()
+    seeded()
+    local messages = require("uji.core.agent.view").build(app.session:entries())
+    uji.task.spawn(function()
+        app.agent:fold(messages)
+    end)
+    wait.eventually(function()
+        return app.agent:compacting()
+    end)
+    assert.is_true(app.agent.compaction.messages > 0, "a fold says how many messages it folds")
+    wait.eventually(function()
+        return not app.agent:compacting()
+    end)
+end)
+
+it("does not remember a stopped manual compaction", { timeout = 20 }, function()
+    summarising()
+    seeded()
+    assert.is_true(app.agent:compact())
+    wait.eventually(function()
+        return app.agent:compacting()
+    end)
+    assert.is_true(app.agent:interrupt())
+    assert.is_nil(app.agent.compaction)
+    assert.is_falsy(app.agent.skipped_compaction)
 end)
 
 describe("a plugin", function()

@@ -130,6 +130,13 @@ describe("the default look", function()
         look("job")
     end)
 
+    it("draws the compaction in place of the input", { size = { 80, 12 } }, function()
+        app.agent.state = "working"
+        app.agent.started = sys.os.clock()
+        app.agent.compaction = { started = app.agent.started, messages = 42 }
+        look("compacting")
+    end)
+
     it("draws markdown and a reply as it streams", { size = { 80, 60 } }, function()
         fixture.markdown()
         highlighted()

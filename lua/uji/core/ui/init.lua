@@ -25,6 +25,18 @@ local Theme = require("uji.core.ui.theme")
 local FRAME = 1 / 60
 local SCROLL_LINES = 3
 
+local ALLOWED_WHILE_COMPACTING = {
+    interrupt = true,
+    quit = true,
+    scroll_top = true,
+    scroll_bottom = true,
+    scroll_up = true,
+    scroll_down = true,
+    page_up = true,
+    page_down = true,
+    toggle_thinking = true,
+}
+
 local NORMAL = {
     backspace = "backspace",
     left = "cursor_left",
@@ -171,6 +183,22 @@ function Ui:working()
     return app.agent ~= nil and app.agent:working()
 end
 
+function Ui:compacting()
+    return app.agent ~= nil and app.agent:compacting()
+end
+
+function Ui:compaction()
+    local agent = app.agent
+    if not agent or not agent:compacting() then
+        return nil
+    end
+    return {
+        frame = self:loader_frame(),
+        messages = agent.compaction.messages,
+        elapsed = math.floor(agent:compaction_elapsed() or 0),
+    }
+end
+
 function Ui:loader_frame()
     local tokens = self.theme.tokens
     local frames = tokens.symbols.spinner
@@ -183,7 +211,7 @@ function Ui:loader_frame()
 end
 
 function Ui:current_activity()
-    if not self:working() then
+    if not self:working() or self:compacting() then
         return nil
     end
     return { elapsed = math.floor(app.agent:elapsed() or 0), frame = self:loader_frame() }
@@ -394,6 +422,9 @@ function Ui:submit()
 end
 
 function Ui:paste(value)
+    if self:compacting() then
+        return
+    end
     local modal = self.modal
     local line = modal and modal:line()
     if line then
@@ -411,6 +442,9 @@ function Ui:paste(value)
 end
 
 function Ui:act(name)
+    if self:compacting() and not ALLOWED_WHILE_COMPACTING[name] then
+        return
+    end
     local builtin = actions.RUN[name]
     if builtin then
         builtin(self)
@@ -441,8 +475,11 @@ end
 
 function Ui:normal_key(chord)
     local key = chord.key
+    if self:compacting() and keys.is_char(chord) then
+        return
+    end
     if key == "esc" then
-        if self.composer:text() == "" then
+        if self:compacting() or self.composer:text() == "" then
             self:interrupt()
         else
             self:clear_input()
@@ -474,7 +511,9 @@ function Ui:key(chord)
     else
         local binding = self.keymap:get(self:mode(), chord)
         if binding and binding.command then
-            self:run_command(binding.command)
+            if not self:compacting() then
+                self:run_command(binding.command)
+            end
         elseif binding and binding.action then
             self:act(binding.action)
         elseif not binding then

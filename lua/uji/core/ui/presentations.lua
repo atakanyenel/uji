@@ -1,3 +1,4 @@
+local Compacting = require("uji.core.ui.compacting")
 local diagnostics = require("uji.core.diagnostics")
 local host = require("uji.core.ui.host")
 local Input = require("uji.core.ui.input")
@@ -64,7 +65,8 @@ M.Composer = ito.view(function()
     local ui = host.Host.current
     local takeovers = ui:takeovers()
     if #takeovers == 0 then
-        return Input()
+        local compaction = ui:compaction()
+        return compaction and Compacting(compaction) or Input()
     end
     return ito.VStack(layers(takeovers, function(modal)
         return M.Presentation({ modal = modal })

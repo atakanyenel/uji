@@ -14,6 +14,10 @@ local function head(code, headers)
 end
 
 local function respond(conn, reply)
+    if reply.after then
+        sys.sleep(reply.after)
+        reply = reply.reply
+    end
     if reply.lines then
         local body = table.concat(reply.lines, "\n\n") .. "\n\n"
         return conn:write(head(200, {
@@ -157,6 +161,12 @@ end
 
 function M.drip(line, every)
     return { drip = line, every = every }
+end
+
+-- Holds the answer back, so a test can look at uji while the request is in
+-- flight. Wraps any other reply.
+function M.after(seconds, reply)
+    return { after = seconds, reply = reply }
 end
 
 return M

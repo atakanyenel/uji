@@ -20,12 +20,19 @@ function M.allow_all()
     uji.tool.policy({ default = "allow" })
 end
 
-function M.serve(script)
+-- opts.summary holds the summary back for that many seconds, which a test
+-- uses to look at uji while a compaction is in flight.
+function M.serve(script, opts)
     local round = 0
+    local summary = opts and opts.summary
     return server.start(function(request)
         if not server.has_tools(request) then
             local compacting = server.system(request):find("compact", 1, true)
-            return server.text(compacting and "SUMMARY OF EARLIER WORK" or "Title")
+            local reply = server.text(compacting and "SUMMARY OF EARLIER WORK" or "Title")
+            if compacting and summary then
+                return server.after(summary, reply)
+            end
+            return reply
         end
         local reply = script(round)
         round = round + 1
