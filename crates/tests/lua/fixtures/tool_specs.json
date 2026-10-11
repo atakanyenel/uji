@@ -1,6 +1,33 @@
 [
   {
     "function": {
+      "description": "Ask the person a question and wait for their answer. Use it when a change or a setup needs something only they know, such as which backend, which url, or which of two files. Pass options when the answer is one of a few choices, and leave them out when the person should type the answer.",
+      "name": "ask_user",
+      "parameters": {
+        "additionalProperties": false,
+        "properties": {
+          "options": {
+            "description": "The answers to choose between. Leave it out when the person types the answer.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "question": {
+            "description": "The question to put to the person, short and specific.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "type": "object"
+      }
+    },
+    "type": "function"
+  },
+  {
+    "function": {
       "description": "Replace an exact snippet of an existing file, leaving the rest untouched. This is the tool to use for changing code. `old_string` must reproduce the file's current text byte for byte, including indentation and newlines, and must appear exactly once unless `replace_all` is true - include a few surrounding lines to make it unique. Do not include the `NNN| ` line-number prefixes that read_file adds. To delete code, pass an empty `new_string`.",
       "name": "edit_file",
       "parameters": {
