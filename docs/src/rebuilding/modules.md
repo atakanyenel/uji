@@ -14,6 +14,7 @@ screen.
 | `core/paths.lua` | Where the config, the data and the session database are. |
 | `core/config.lua` | Loads your config and plugins, and runs `/reload`. |
 | `core/packs.lua` | `uji.pack`, and finding modules in your config and packs. |
+| `core/scaffold.lua` | The starter config and the `uji-config` skill that `/setup` writes. |
 | `core/agent/`, `core/loop.lua` | Runs a turn, which sends the conversation, runs tools, compacts and picks a title. |
 | `core/prompt.lua` | The system prompt. |
 | `core/model.lua`, `core/catalog.lua` | Providers, models and choosing between them. |
@@ -27,7 +28,7 @@ screen.
 | `core/event.lua`, `core/task.lua`, `core/plugin.lua`, `core/registry.lua`, `core/class.lua` | Events, tasks, plugin ownership and the building blocks the rest is made of. |
 | `builtin/providers/` | The providers `/login` lists, each with the API it speaks and its own changes to it. |
 | `builtin/apis/` | The Chat Completions, Responses, Anthropic and Gemini API classes, and the streaming they share. |
-| `builtin/tools/` | `read_file`, `edit_file`, `write_file`, `run_command`, `job_output` and `stop_job`. |
+| `builtin/tools/` | `read_file`, `edit_file`, `write_file`, `run_command`, `ask_user`, `job_output` and `stop_job`. |
 | `builtin/commands/` | The built-in slash commands, one file each. |
 | `builtin/defaults.lua` | The default tool policy and bindings that `require("uji.builtin.defaults")` loads. |
 | `themes/default.lua` | The default theme, and the function other themes build on. |

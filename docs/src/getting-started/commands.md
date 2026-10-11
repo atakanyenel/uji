@@ -27,6 +27,7 @@ lists the environment variables that do the same.
 | Command | Does |
 |---|---|
 | `/login` | Adds a provider. |
+| `/setup` | Writes a starter config, then asks what you want in it. It is there until you have a config. See [Configuration](../configuration/index.md#starting-a-config). |
 | `/models` | Picks the model. |
 | `/effort` | Sets the reasoning effort, from the levels the current model accepts. |
 | `/thinking` | Shows or hides the model's reasoning. |

@@ -50,8 +50,9 @@
           default = rustPlatform.buildRustPackage {
             pname = "uji";
             inherit (workspace) version;
-            # only what the build reads, so editing docs, README or this flake
-            # doesn't force everyone to rebuild uji
+            # only what the build reads, so editing the README or this flake
+            # doesn't force everyone to rebuild uji. the book is in here
+            # because /setup hands it to the model as the uji-config skill
             src = pkgs.lib.fileset.toSource {
               root = ./.;
               fileset = pkgs.lib.fileset.unions [
@@ -59,6 +60,7 @@
                 ./Cargo.lock
                 ./crates
                 ./lua
+                ./docs/src
               ];
             };
             cargoLock = {

@@ -31,6 +31,12 @@ in the system keychain instead, call
 `/models` lists the models of every provider you are signed in to. `/effort`
 sets how much the model reasons, from the levels that model accepts.
 
+## Making it yours
+
+`/setup` writes a starter config and asks what you want in it.
+[Starting a config](../configuration/index.md#starting-a-config) shows what it
+writes.
+
 ## Working with the model
 
 - Enter sends your message. Shift+Enter, Alt+Enter or Ctrl+J start a new line.
