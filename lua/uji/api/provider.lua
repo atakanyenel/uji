@@ -26,6 +26,7 @@ local function provider_row(provider)
         base_url = provider.base_url,
         auth_env = { unpack(provider.auth_env) },
         oauth = provider.oauth ~= nil,
+        device_auth = provider.oauth ~= nil and provider.oauth.device ~= nil,
         loop = provider.loop ~= nil,
         context_window = provider.context_window,
         models = model_rows(provider),

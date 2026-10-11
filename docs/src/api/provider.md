@@ -122,7 +122,8 @@ uji.provider.remove("perplexity")
 
 Returns one table per provider with `id`, `name`, `api`, `base_url`,
 `auth_env`, `context_window`, `models`, `oauth`, which is `true` when the
-provider offers subscription sign-in, `loop`, which is `true` when the provider
+provider offers subscription sign-in, `device_auth`, which is `true` when its
+`oauth.device` settings support device code sign-in, `loop`, which is `true` when the provider
 runs its own agent loop, `state` and `error`. Each model has `id`,
 `context`, `output`, `reasoning`, `cache`, `images` and `efforts`.
 

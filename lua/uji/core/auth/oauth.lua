@@ -184,20 +184,55 @@ local function post(config, endpoint, fields)
         error(endpoint .. " returned " .. response.status .. ": " .. clip(response.body), 0)
     end
     local ok, parsed = pcall(sys.json.decode, response.body, { nulls = false })
-    if not ok or type(parsed) ~= "table" or type(parsed.access_token) ~= "string" then
+    if not ok or type(parsed) ~= "table" or type(parsed.access_token) ~= "string" or parsed.access_token == "" then
         error(endpoint .. " returned an unexpected body: " .. clip(response.body), 0)
     end
     return parsed
 end
 
-local function tokens(parsed)
-    local expires = parsed.expires_in or 0
-    return {
+local function claims(encoded)
+    local payload = type(encoded) == "string" and encoded:match("^[^.]+%.([^.]+)%.[^.]*$")
+    if not payload then
+        return {}
+    end
+    local ok, decoded = pcall(function()
+        return sys.json.decode(sys.base64.decode(payload, { url = true, pad = false }), { nulls = false })
+    end)
+    return ok and type(decoded) == "table" and decoded or {}
+end
+
+local function claim(payload, path)
+    local value = payload
+    for _, key in ipairs(path) do
+        value = type(value) == "table" and value[key] or nil
+    end
+    return type(value) == "string" and value ~= "" and value or nil
+end
+
+local function tokens(config, parsed, previous)
+    local access = claims(parsed.access_token)
+    local duration = tonumber(parsed.expires_in)
+    local expires = duration and duration > 0 and M.now() + duration or 0
+    if type(access.exp) == "number" and access.exp > 0 then
+        expires = expires > 0 and math.min(expires, access.exp) or access.exp
+    end
+    local credential = {
         type = "oauth",
         access = parsed.access_token,
-        refresh = parsed.refresh_token or "",
-        expires_at = expires > 0 and M.now() + expires - EXPIRY_SKEW or 0,
+        refresh = type(parsed.refresh_token) == "string" and parsed.refresh_token ~= "" and parsed.refresh_token
+            or previous and previous.refresh
+            or "",
+        expires_at = expires > 0 and expires - EXPIRY_SKEW or 0,
     }
+    if config.account_id_claim then
+        credential.account_id = claim(claims(parsed.id_token), config.account_id_claim)
+            or claim(access, config.account_id_claim)
+            or previous and previous.account_id
+        if not credential.account_id then
+            error("sign-in did not return an account ID; please sign in again", 0)
+        end
+    end
+    return credential
 end
 
 local function trade(config, exchange, parsed)
@@ -220,6 +255,24 @@ function M.start(config)
     return flow, server
 end
 
+function M.exchange(config, code, redirect_uri, verifier, state)
+    local fields = {
+        { "grant_type", "authorization_code" },
+        { "client_id", config.client_id },
+        { "code", code },
+        { "redirect_uri", redirect_uri },
+        { "code_verifier", verifier },
+    }
+    if config.state == "verifier" then
+        fields[#fields + 1] = { "state", state }
+    end
+    local parsed = post(config, "token exchange", fields)
+    if config.exchange then
+        return { type = "api_key", key = trade(config, config.exchange, parsed) }
+    end
+    return tokens(config, parsed)
+end
+
 function M.login(config, flow, server)
     local ok, params = pcall(flow.wait, flow, server)
     server:close()
@@ -229,33 +282,19 @@ function M.login(config, flow, server)
     if params.state and params.state ~= flow.state then
         error("oauth state mismatch; the sign-in was not completed in this session", 0)
     end
-    local fields = {
-        { "grant_type", "authorization_code" },
-        { "client_id", config.client_id },
-        { "code", params.code or "" },
-        { "redirect_uri", flow.redirect_uri },
-        { "code_verifier", flow.verifier },
-    }
-    if config.state == "verifier" then
-        fields[#fields + 1] = { "state", flow.state }
-    end
-    local parsed = post(config, "token exchange", fields)
-    if config.exchange then
-        return { type = "api_key", key = trade(config, config.exchange, parsed) }
-    end
-    return tokens(parsed)
+    return M.exchange(config, params.code or "", flow.redirect_uri, flow.verifier, flow.state)
 end
 
-function M.refresh(config, refresh_token)
-    local refreshed = tokens(post(config, "token refresh", {
-        { "grant_type", "refresh_token" },
-        { "client_id", config.client_id },
-        { "refresh_token", refresh_token },
-    }))
-    if refreshed.refresh == "" then
-        refreshed.refresh = refresh_token
-    end
-    return refreshed
+function M.refresh(config, credential)
+    return tokens(
+        config,
+        post(config, "token refresh", {
+            { "grant_type", "refresh_token" },
+            { "client_id", config.client_id },
+            { "refresh_token", credential.refresh },
+        }),
+        credential
+    )
 end
 
 return M

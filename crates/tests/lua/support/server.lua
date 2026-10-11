@@ -53,6 +53,7 @@ local function read(conn)
     end
     local length = tonumber(request.headers["content-length"]) or 0
     local raw = length > 0 and conn:read(length) or ""
+    request.raw = raw
     local ok, body = pcall(sys.json.decode, raw)
     request.body = ok and body or {}
     return request

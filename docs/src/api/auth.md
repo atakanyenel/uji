@@ -53,15 +53,33 @@ saved, or `nil` and an error message. A key in one of the provider's
 uji.auth.remove("openrouter")
 ```
 
-## uji.auth.login(id, on_done)
+## uji.auth.login(id, opts, on_done)
 
 Signs in to the provider `id` with its subscription. uji opens your browser,
 waits for the sign-in to finish, saves it, and gives `true`, or `nil` and an
 error message. A provider without `oauth` settings gives an error message
 too. Raises an error for an unknown provider.
 
+`opts` is optional. Its `method` is `"browser"` by default, or `"device"`
+for device code sign-in. OpenAI supports both. Device sign-in displays a link
+and a one-time code, then waits up to 15 minutes. It does not open a browser
+or bind a local callback port. Both OpenAI sign-in methods save ChatGPT OAuth
+tokens and refresh them when they expire. Model requests use your ChatGPT
+subscription; saving an API key instead uses the OpenAI API. Enable device
+code login in your ChatGPT security settings or workspace permissions first,
+as described in the
+[OpenAI authentication guide](https://developers.openai.com/codex/auth/#login-on-headless-devices).
+
+An unsupported sign-in method for a provider returns `nil` and an error
+message. An unknown option or a `method` other than `"browser"` or `"device"`
+raises an error. With a callback, the function returns a cancellation function.
+
 ```lua
 uji.auth.login("anthropic", function(ok, err)
+  uji.notify(ok and "signed in" or "sign-in failed: " .. err)
+end)
+
+local cancel = uji.auth.login("openai", { method = "device" }, function(ok, err)
   uji.notify(ok and "signed in" or "sign-in failed: " .. err)
 end)
 ```

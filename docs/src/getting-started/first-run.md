@@ -14,6 +14,11 @@ Type `/login` and pick a provider from the list.
 - Anthropic and OpenAI ask how you want to sign in. "Subscription (sign in
   with browser)" opens the provider's sign-in page, and "API key" asks for a
   key.
+- OpenAI also offers "Subscription (sign in with device code)". Open the
+  displayed link on any device and enter the one-time code within 15 minutes.
+  Enable device code login in your ChatGPT security settings or workspace
+  permissions first. This works without a browser or a callback port on the
+  machine running uji.
 - A provider that needs a key asks for it. The prompt names the environment
   variable uji also reads, such as `ANTHROPIC_API_KEY`, and pressing Enter on
   an empty prompt uses that variable instead.
@@ -21,7 +26,7 @@ Type `/login` and pick a provider from the list.
   requests.
 - A provider you are signed in to asks whether to sign in again or sign out.
 
-uji saves keys in `auth.toml` in the
+uji saves keys and subscription sign-ins in `auth.toml` in the
 [data directory](../configuration/files.md), readable only by you. To keep them
 in the system keychain instead, call
 [`uji.auth.configure`](../api/auth.md) in your config.

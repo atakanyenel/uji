@@ -122,7 +122,7 @@ Every function lives under the global `uji` table. A function that finishes late
 | [`uji.auth.configure(opts)`](auth.md#ujiauthconfigureopts) | Chooses between `auth.toml` and the system keychain for API keys and sign-ins. |
 | [`uji.auth.authenticated(id)`](auth.md#ujiauthauthenticatedid) | Returns `true` when uji has a key or sign-in for a provider. |
 | [`uji.auth.save_key(id, key)`](auth.md#ujiauthsave_keyid-key) | Saves an API key for a provider. |
-| [`uji.auth.login(id, on_done)`](auth.md#ujiauthloginid-on_done) | Signs in to a provider with its subscription in the browser. |
+| [`uji.auth.login(id, opts, on_done)`](auth.md#ujiauthloginid-opts-on_done) | Signs in to a provider in the browser or with a device code. |
 
 ## Provider APIs
 

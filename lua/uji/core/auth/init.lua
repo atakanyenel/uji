@@ -1,5 +1,6 @@
 local Credentials = require("uji.core.auth.credentials")
 local check = require("uji.core.check")
+local device = require("uji.core.auth.device")
 local notices = require("uji.core.notices")
 local oauth = require("uji.core.auth.oauth")
 local paths = require("uji.core.paths")
@@ -43,16 +44,16 @@ function M.authenticated(provider)
     return M.credentials():authenticated(provider)
 end
 
-local function bearer(provider, credential)
+local function session_credential(provider, credential)
     if not oauth.expired(credential) then
-        return credential.access
+        return credential
     end
-    local refreshed = oauth.refresh(provider.oauth, credential.refresh)
+    local refreshed = oauth.refresh(provider.oauth, credential)
     local saved, err = M.credentials():save(provider.id, refreshed)
     if not saved then
         error("refreshed the session but could not save it: " .. tostring(err), 0)
     end
-    return refreshed.access
+    return refreshed
 end
 
 function M.resolve(provider)
@@ -61,12 +62,13 @@ function M.resolve(provider)
     local key = stored and stored.type == "api_key" and stored.key or Credentials.env_key(provider.auth_env)
     local session
     if provider.oauth and stored and stored.type == "oauth" then
-        local ok, token = pcall(bearer, provider, stored)
+        local ok, credential = pcall(session_credential, provider, stored)
         if not ok then
-            return nil, { kind = "provider", message = tostring(token) }
+            return nil, { kind = "provider", message = tostring(credential) }
         end
         session = {
-            token = token,
+            token = credential.access,
+            account_id = credential.account_id,
             headers = provider.oauth.request_headers or {},
             identity_prompt = provider.oauth.identity_prompt,
         }
@@ -74,18 +76,39 @@ function M.resolve(provider)
     return { key = key, oauth = session }
 end
 
-function M.login(provider)
-    if not provider.oauth then
-        return nil, "this provider does not support subscription sign-in"
-    end
-    local ok, flow, server = pcall(oauth.start, provider.oauth)
-    if not ok then
-        return nil, tostring(flow)
-    end
+local function browser_login(config)
+    local flow, server = oauth.start(config)
     local url = flow:url()
     process.open(url)
     notices.push("opened your browser to sign in - " .. url)
-    local signed, grant = pcall(oauth.login, provider.oauth, flow, server)
+    return oauth.login(config, flow, server)
+end
+
+local function device_login(config)
+    local flow = device.start(config)
+    notices.push("open " .. flow.url .. " and enter code " .. flow.code .. " to sign in; expires in 15 minutes")
+    return device.login(config, flow)
+end
+
+function M.login(provider, opts)
+    opts = opts or {}
+    check.options(opts, "uji.auth.login")
+    for key in pairs(opts) do
+        if key ~= "method" then
+            error("unknown key " .. tostring(key), 2)
+        end
+    end
+    local method = opts.method or "browser"
+    if method ~= "browser" and method ~= "device" then
+        error("uji.auth.login method must be browser or device", 2)
+    end
+    if not provider.oauth then
+        return nil, "this provider does not support subscription sign-in"
+    end
+    if method == "device" and not provider.oauth.device then
+        return nil, "this provider does not support device code sign-in"
+    end
+    local signed, grant = pcall(method == "device" and device_login or browser_login, provider.oauth)
     if not signed then
         return nil, tostring(grant)
     end

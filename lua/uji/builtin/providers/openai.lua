@@ -1,10 +1,48 @@
+local common = require("uji.builtin.apis.common")
+local Responses = uji.api.responses
+
+local OpenAI = uji.class(Responses)
+
+OpenAI.oauth_url = "https://chatgpt.com/backend-api/codex/responses"
+
+function OpenAI:url(request)
+    return request.auth.oauth and self.oauth_url or Responses.url(self, request)
+end
+
+function OpenAI:headers(request)
+    local session = request.auth.oauth
+    if not session then
+        return Responses.headers(self, request)
+    end
+    return {
+        Authorization = common.bearer(session.token),
+        ["ChatGPT-Account-Id"] = session.account_id,
+        originator = "uji",
+        session_id = common.session(request),
+    }
+end
+
+function OpenAI:body(request)
+    local out = Responses.body(self, request)
+    if request.auth.oauth then
+        out.max_output_tokens = nil
+        out.tools = out.tools or uji.json.array({})
+        out.tool_choice = "auto"
+        out.parallel_tool_calls = true
+        if out.input[1] and out.input[1].role == "system" then
+            out.input[1].role = "developer"
+        end
+    end
+    return out
+end
+
 local FULL = { "off", "minimal", "low", "medium", "high", "xhigh", "max" }
 local GPT5 = { "minimal", "low", "medium", "high" }
 
 uji.provider.add({
     id = "openai",
     name = "OpenAI",
-    api = uji.api.responses(),
+    api = OpenAI(),
     base_url = "https://api.openai.com/v1",
     auth_env = { "OPENAI_API_KEY" },
     oauth = {
@@ -15,11 +53,12 @@ uji.provider.add({
         redirect_port = 1455,
         redirect_path = "/auth/callback",
         token_body = "form",
-        exchange = {
-            grant_type = "urn:ietf:params:oauth:grant-type:token-exchange",
-            requested_token = "openai-api-key",
-            subject_token_type = "urn:ietf:params:oauth:token-type:id_token",
-            subject = "id_token",
+        account_id_claim = { "https://api.openai.com/auth", "chatgpt_account_id" },
+        device = {
+            code_url = "https://auth.openai.com/api/accounts/deviceauth/usercode",
+            poll_url = "https://auth.openai.com/api/accounts/deviceauth/token",
+            verification_url = "https://auth.openai.com/codex/device",
+            redirect_uri = "https://auth.openai.com/deviceauth/callback",
         },
     },
     models = {
