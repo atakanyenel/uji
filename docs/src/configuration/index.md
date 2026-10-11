@@ -33,11 +33,21 @@ Until you have an `init.lua`, `/setup` writes one for you. Sign in with
    config directory. The skill holds a guide to changing the config and a copy
    of this book for your version of uji.
 3. It asks what you want, one question at a time: what uji may run without
-   asking, which plugins to turn on, the theme and the keys. Then it writes
-   your answers into `init.lua`, and you approve the change like any other.
+   asking, which plugins to turn on, the theme and the keys. It writes each
+   answer into `init.lua` as you give it, which you approve like any other
+   change, and reloads so that you see it take effect.
 
 Text after the command says what you want up front, such as
 `/setup only a dark theme and the status line`.
 
-Run `/reload` when it finishes. `/setup` is gone after that, and the skill
-takes over: ask uji in plain words to change its own setup.
+`/setup` is gone once you have a config, and the skill takes over: ask uji in
+plain words to change its own setup.
+
+## Changing the config from inside uji
+
+Start uji in the config directory and ask for the change. There the model has
+the `reload_config` tool. After it edits the config, uji restarts on the same
+conversation when the turn ends and tells the model which notices loading the
+config raised, so it can fix an error it made and carry on.
+
+Anywhere else the model cannot restart uji, and you run `/reload` yourself.

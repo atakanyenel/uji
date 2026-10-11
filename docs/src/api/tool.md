@@ -1,9 +1,12 @@
 # uji.tool
 
-uji ships six tools: `read_file`, `edit_file`, `write_file`, `run_command`,
-and `job_output` and `stop_job` for [background jobs](jobs.md). The functions
-below add your own, switch tools off and on, and decide which calls need your
-approval.
+uji ships seven tools: `read_file`, `edit_file`, `write_file`, `run_command`,
+`ask_user`, which puts a question to you, and `job_output` and `stop_job` for
+[background jobs](jobs.md). An eighth, `reload_config`, is there when uji runs
+in its config directory, where the model can
+[reload after it changes your config](../configuration/index.md#changing-the-config-from-inside-uji).
+The functions below add your own, switch tools off and on, and decide which
+calls need your approval.
 
 ## uji.tool.add(name, spec)
 

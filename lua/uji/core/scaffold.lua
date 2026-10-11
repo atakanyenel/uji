@@ -46,7 +46,7 @@ uji is configured in Lua, and this install keeps its config in `$CONFIG`.
 2. Read the reference page for each function you are about to use, and for a plugin, its source in the pack. Do not write an option from memory. When neither says what a value should be, ask the person instead of guessing.
 3. Give each setting one place. A plugin that is already set up gets its options changed, not a second `setup` call.
 4. Never put a key or a token in the config. Provider keys go through `/login`, and a plugin that wants its own key reads it from the environment, so name the variable to export.
-5. Read the file back, then tell the person to run `/reload`. Nothing changes until they do.
+5. Reload, because nothing changes until uji reads the config again. Call the `reload_config` tool when you have it, which is when uji runs in the config directory, and uji tells you how the config loaded. Without it, tell the person to run `/reload`.
 
 A pack that is missing joins the `uji.pack.add({ ... })` list in `init.lua`, as `"user/repo"` or `{ dir = "~/path" }`. uji installs it on the next `/reload`, and `/sync` updates the packs that are installed.
 

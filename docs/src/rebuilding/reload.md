@@ -7,5 +7,6 @@ those packs for later starts.
 
 `/reload` and `/sync` restart uji with your current files. The
 conversation, what you are typing and the screen stay as they are. A turn in
-progress has to finish, or be interrupted with Esc, before a reload. Processes
-that plugins started, such as MCP servers, are started again.
+progress has to finish, or be interrupted with Esc, before a reload. When the
+model asks for one with `reload_config`, uji reloads as that turn ends.
+Processes that plugins started, such as MCP servers, are started again.

@@ -90,6 +90,7 @@ local function run(args)
     require("uji.core.task").hold()
     app.argv = args
     app.flags = parsed.flags
+    app.command = command
     require("uji.core.model").attach(store)
     require("uji.core.ui").theme:restore()
     require("uji.builtin.commands")

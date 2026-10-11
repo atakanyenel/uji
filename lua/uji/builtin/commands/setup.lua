@@ -12,6 +12,7 @@ end
 local OPENING = "Set up uji for me."
 local THEMES = "uji.themes"
 local POLICY = "uji.tool.policy"
+local RELOAD = "uji.builtin.tools.reload_config"
 
 local PLAYBOOK = [[
 You are setting up uji for the person who ran /setup. uji has just written
@@ -36,8 +37,15 @@ is enough. Cover, in this order:
 When the request below already says what they want, set that up and ask only
 for the details it leaves out.
 
-Write the config once the answers are in, in one go. The write goes through
-uji's approval, so do not also ask in prose.
+After each answer that changes something, put it in the config before the next
+question, so they see it take effect:
+- Edit init.lua. The write goes through uji's approval, so do not also ask in
+  prose.
+- Then call reload_config and end your turn. uji restarts on this
+  conversation, tells you how the config loaded and hands the turn back to
+  you. Fix an error it reports before the next question.
+
+How the config is written:
 - Everything goes in init.lua, below what is there. One place per setting, and
   a plugin that is already set up gets its options changed, not a second call.
 - Write an option only as a page below gives it. For a plugin they chose that
@@ -50,9 +58,9 @@ uji's approval, so do not also ask in prose.
   plugin that wants its own key reads it from the environment, so name the
   variable to export instead of taking the value in the conversation.
 
-Finish by telling them to run /reload, and that after it they can ask uji in
-plain words to change its own setup, because the guide stays with their
-config. Keep the report short.]]
+When the interview is over, tell them that their answers are in init.lua and
+already on, and that they can ask uji in plain words to change its own setup,
+because the guide stays with their config. Keep the report short.]]
 
 local state = { pending = nil }
 
@@ -206,6 +214,7 @@ uji.command.add("setup", {
             uji.notify("started your config at " .. uji.os.shorten(made.init))
         end
         uji.pack.add({ scaffold.PLUGINS })
+        require(RELOAD).grant()
         local request = args ~= "" and args or OPENING
         state.pending = briefed(made, request)
         uji.session.submit(request)

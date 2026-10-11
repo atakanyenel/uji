@@ -60,11 +60,11 @@ function M.settle(args)
     if tables.same(declared, sys.os.roots) then
         return false
     end
-    sys.os.restart({ args = args, roots = declared })
+    sys.os.restart({ args = args, roots = declared, carry = sys.os.carry })
     return true
 end
 
-function M.reload()
+function M.reload(carry)
     local app = require("uji.core.app")
     if app.agent and app.agent:working() then
         notices.push("finish or interrupt the current turn before reloading")
@@ -79,7 +79,8 @@ function M.reload()
         end
     end
     local draft = require("uji.core.ui").composer:text()
-    sys.os.restart({ args = argv, roots = packs.expected(), carry = sys.json.encode({ draft = draft }) })
+    local carried = tables.merged({ draft = draft }, carry)
+    sys.os.restart({ args = argv, roots = packs.expected(), carry = sys.json.encode(carried) })
 end
 
 return M

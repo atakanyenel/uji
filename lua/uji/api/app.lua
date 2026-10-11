@@ -5,4 +5,6 @@ uji.quit = function()
     ui:quit()
 end
 
-uji.reload = config.reload
+uji.reload = function()
+    config.reload()
+end
