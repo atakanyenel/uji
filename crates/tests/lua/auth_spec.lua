@@ -45,6 +45,16 @@ local function provider(handler)
     return catalog.get(ID), server
 end
 
+-- Answers the usercode request with CODE, so a test writes only its own step.
+local function device_provider(handler)
+    return provider(function(request)
+        if request.path == "/usercode" then
+            return json(CODE)
+        end
+        return handler(request)
+    end)
+end
+
 local function form(raw)
     local result = {}
     local function decode(text)
@@ -149,6 +159,13 @@ it("accepts the usercode spelling and numeric polling intervals", function()
     assert.equal(1, flow.interval)
 end)
 
+it("waits five seconds between polls when the device code omits the interval", function()
+    local chosen = provider(function()
+        return json({ device_auth_id = "device", user_code = "1234" })
+    end)
+    assert.equal(5, device.start(chosen.oauth).interval)
+end)
+
 it("rejects malformed device codes without saving a credential", function()
     local body
     provider(function()
@@ -181,10 +198,7 @@ end)
 
 it("stops on rejected polling responses and preserves the saved credential", function()
     local status, polls = 0, 0
-    provider(function(request)
-        if request.path == "/usercode" then
-            return json(CODE)
-        end
+    device_provider(function()
         polls = polls + 1
         return Server.status(status, "private server details")
     end)
@@ -210,10 +224,7 @@ it("rejects an approval missing the PKCE verifier", function()
 end)
 
 it("expires pending device codes even while an HTTP request is waiting", function()
-    local chosen = provider(function(request)
-        if request.path == "/usercode" then
-            return json(CODE)
-        end
+    local chosen = device_provider(function()
         sys.sleep(1)
         return json(APPROVED)
     end)
@@ -239,10 +250,7 @@ end)
 
 it("cancels device polling without saving or invoking the callback", function()
     local polls, completed = 0, false
-    provider(function(request)
-        if request.path == "/usercode" then
-            return json(CODE)
-        end
+    device_provider(function()
         polls = polls + 1
         return Server.status(403, "pending")
     end)
@@ -260,10 +268,8 @@ it("cancels device polling without saving or invoking the callback", function()
 end)
 
 it("keeps the existing credential if the final token exchange fails", function()
-    provider(function(request)
-        if request.path == "/usercode" then
-            return json(CODE)
-        elseif request.path == "/poll" then
+    device_provider(function(request)
+        if request.path == "/poll" then
             return json(APPROVED)
         end
         return Server.status(401, "denied")
@@ -276,10 +282,8 @@ it("keeps the existing credential if the final token exchange fails", function()
 end)
 
 it("reports a credential save failure after a successful device exchange", function()
-    provider(function(request)
-        if request.path == "/usercode" then
-            return json(CODE)
-        elseif request.path == "/poll" then
+    device_provider(function(request)
+        if request.path == "/poll" then
             return json(APPROVED)
         end
         return json(grant())
@@ -371,7 +375,6 @@ it("refreshes ChatGPT access tokens and retains account metadata when omitted", 
     assert.equal(2, exchanges)
     assert.equal(4, #server.requests)
     assert.equal(stored.access, auth.resolve(chosen).oauth.token)
-    assert.equal(2, exchanges)
 end)
 
 it("preserves the credential and skips model requests if refresh is rejected", function()

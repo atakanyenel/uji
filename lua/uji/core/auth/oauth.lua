@@ -216,12 +216,14 @@ local function tokens(config, parsed, previous)
     if type(access.exp) == "number" and access.exp > 0 then
         expires = expires > 0 and math.min(expires, access.exp) or access.exp
     end
+    local refresh = parsed.refresh_token
+    if type(refresh) ~= "string" or refresh == "" then
+        refresh = previous and previous.refresh or ""
+    end
     local credential = {
         type = "oauth",
         access = parsed.access_token,
-        refresh = type(parsed.refresh_token) == "string" and parsed.refresh_token ~= "" and parsed.refresh_token
-            or previous and previous.refresh
-            or "",
+        refresh = refresh,
         expires_at = expires > 0 and expires - EXPIRY_SKEW or 0,
     }
     if config.account_id_claim then
@@ -233,17 +235,6 @@ local function tokens(config, parsed, previous)
         end
     end
     return credential
-end
-
-local function trade(config, exchange, parsed)
-    local subject = exchange.subject == "access_token" and parsed.access_token or (parsed.id_token or "")
-    return post(config, "api key exchange", {
-        { "grant_type", exchange.grant_type },
-        { "client_id", config.client_id },
-        { "requested_token", exchange.requested_token },
-        { "subject_token", subject },
-        { "subject_token_type", exchange.subject_token_type },
-    }).access_token
 end
 
 function M.start(config)
@@ -266,11 +257,7 @@ function M.exchange(config, code, redirect_uri, verifier, state)
     if config.state == "verifier" then
         fields[#fields + 1] = { "state", state }
     end
-    local parsed = post(config, "token exchange", fields)
-    if config.exchange then
-        return { type = "api_key", key = trade(config, config.exchange, parsed) }
-    end
-    return tokens(config, parsed)
+    return tokens(config, post(config, "token exchange", fields))
 end
 
 function M.login(config, flow, server)

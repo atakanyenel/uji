@@ -46,3 +46,18 @@ The result is a server, or `nil` and an error message.
 | `conn:read(count)` | Exactly `count` bytes. |
 | `conn:write(data)` | Sends `data`. |
 | `conn:close()` | Closes the connection. |
+
+## uji.net.url(text)
+
+Parses `text` into a url with the parser the requests use, and gives `nil` when
+`text` is not an address with a host.
+
+| Member | Meaning |
+|---|---|
+| `url.uri` | The whole address. |
+| `url.scheme` | The scheme, `https` and the like, in lower case. |
+| `url.host` | The host, in lower case, an address in brackets when it is one, without a user name. |
+| `url.port` | The port it names, or `nil`. |
+| `url.path` | The path, `/` when it names none. |
+| `url.query` | Everything after `?`, or `nil`. |
+| `url.fragment` | Everything after `#`, or `nil`. |

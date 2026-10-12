@@ -5,6 +5,7 @@ local DEVICE = "Subscription (sign in with device code)"
 local API_KEY = "API key"
 local SIGN_IN = "Sign in again"
 local SIGN_OUT = "Sign out"
+local SIGN_IN_WITH = { [SUBSCRIPTION] = "browser", [DEVICE] = "device" }
 
 local function configure(provider, url)
     uji.model.use({ provider = provider.id, base_url = url and url.base_url or "", model = url and url.model })
@@ -93,15 +94,16 @@ uji.command.add("login", {
         local needs_url = provider.base_url == ""
         local blank = needs_url and { base_url = "", model = "" } or nil
         if provider.oauth then
-            local methods = { SUBSCRIPTION }
+            local items = { SUBSCRIPTION }
             if provider.device_auth then
-                methods[#methods + 1] = DEVICE
+                items[#items + 1] = DEVICE
             end
-            methods[#methods + 1] = API_KEY
-            local method = uji.ui.select({ title = provider.name .. " sign-in", items = methods })
-            if method == SUBSCRIPTION or method == DEVICE then
-                sign_in(provider, method == DEVICE and "device" or "browser", blank)
-            elseif method == API_KEY and ask_key(provider) then
+            items[#items + 1] = API_KEY
+            local choice = uji.ui.select({ title = provider.name .. " sign-in", items = items })
+            local method = SIGN_IN_WITH[choice]
+            if method then
+                sign_in(provider, method, blank)
+            elseif choice == API_KEY and ask_key(provider) then
                 configure(provider, blank)
             end
             return

@@ -5,7 +5,7 @@ use std::time::Duration;
 use futures_util::StreamExt;
 use mlua::{BString, Lua, Table};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
-use reqwest::{Client, Method, Url};
+use reqwest::{Client, Method};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
@@ -73,7 +73,7 @@ struct RequestOptions {
 
 struct Request {
     method: Method,
-    url: Url,
+    url: reqwest::Url,
     headers: HeaderMap,
     body: Option<String>,
     timeout: Option<Duration>,
@@ -86,7 +86,7 @@ impl Request {
             Method::from_bytes(method.to_ascii_uppercase().as_bytes())
                 .map_err(|_| NetError::Invalid(format!("invalid method {method}")))
         })?;
-        let url = Url::parse(&opts.url)
+        let url = reqwest::Url::parse(&opts.url)
             .map_err(|err| NetError::Invalid(format!("invalid url {}: {err}", opts.url)))?;
         let headers = opts
             .headers
@@ -290,6 +290,32 @@ impl Body {
     async fn read(&self) -> Result<BString, NetError> {
         self.chunks.lock().await.rest().await.map(BString::from)
     }
+}
+
+#[value]
+struct Url {
+    uri: String,
+    scheme: String,
+    host: String,
+    port: Option<u16>,
+    path: String,
+    query: Option<String>,
+    fragment: Option<String>,
+}
+
+#[function(net)]
+fn url(text: &str) -> Option<Url> {
+    let parsed = reqwest::Url::parse(text).ok()?;
+    let host = parsed.host_str().filter(|host| !host.is_empty())?;
+    Some(Url {
+        uri: parsed.as_str().to_string(),
+        scheme: parsed.scheme().to_string(),
+        host: host.to_string(),
+        port: parsed.port(),
+        path: parsed.path().to_string(),
+        query: parsed.query().map(str::to_string),
+        fragment: parsed.fragment().map(str::to_string),
+    })
 }
 
 #[function(net)]

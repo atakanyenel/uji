@@ -5,6 +5,7 @@ local task = require("uji.core.task")
 local TIMEOUT = 900
 local REQUEST_TIMEOUT = 30
 local DEFAULT_INTERVAL = 5
+local EXPIRED = string.format("device code expired after %d minutes; start sign-in again", TIMEOUT / 60)
 
 local M = {}
 
@@ -37,6 +38,18 @@ local function text(value)
     return type(value) == "string" and value ~= ""
 end
 
+local function wait_seconds(value)
+    local seconds = value == nil and DEFAULT_INTERVAL or tonumber(value)
+    if type(seconds) ~= "number" or seconds ~= seconds or seconds < 0 or seconds == math.huge then
+        return nil
+    end
+    return math.max(1, seconds)
+end
+
+local function pending(response)
+    return response.status == 403 or response.status == 404
+end
+
 function M.start(config)
     local response = post(config.device.code_url, { client_id = config.client_id })
     if response.status == 404 then
@@ -44,15 +57,15 @@ function M.start(config)
     end
     local body = parsed(response, "device code request")
     local code = body.user_code or body.usercode
-    local interval = body.interval == nil and DEFAULT_INTERVAL or tonumber(body.interval)
-    if not text(body.device_auth_id) or not text(code) or not interval or interval ~= interval or interval == math.huge or interval < 0 then
+    local interval = wait_seconds(body.interval)
+    if not text(body.device_auth_id) or not text(code) or not interval then
         error("device code request returned an unexpected body", 0)
     end
     return {
         id = body.device_auth_id,
         code = code,
         url = config.device.verification_url,
-        interval = math.max(1, interval),
+        interval = interval,
         expires_at = sys.os.clock() + TIMEOUT,
     }
 end
@@ -60,12 +73,12 @@ end
 function M.login(config, flow)
     local remaining = flow.expires_at - sys.os.clock()
     if remaining <= 0 then
-        error("device code expired after 15 minutes; start sign-in again", 0)
+        error(EXPIRED, 0)
     end
     local finished, credential = task.timeout(remaining, function()
         while true do
             local response = post(config.device.poll_url, { device_auth_id = flow.id, user_code = flow.code })
-            if response.status ~= 403 and response.status ~= 404 then
+            if not pending(response) then
                 local body = parsed(response, "device sign-in")
                 if not text(body.authorization_code) or not text(body.code_verifier) then
                     error("device sign-in returned an unexpected body", 0)
@@ -76,7 +89,7 @@ function M.login(config, flow)
         end
     end)
     if not finished then
-        error("device code expired after 15 minutes; start sign-in again", 0)
+        error(EXPIRED, 0)
     end
     return credential
 end

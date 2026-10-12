@@ -108,7 +108,8 @@ function M.login(provider, opts)
     if method == "device" and not provider.oauth.device then
         return nil, "this provider does not support device code sign-in"
     end
-    local signed, grant = pcall(method == "device" and device_login or browser_login, provider.oauth)
+    local sign_in = method == "device" and device_login or browser_login
+    local signed, grant = pcall(sign_in, provider.oauth)
     if not signed then
         return nil, tostring(grant)
     end

@@ -19,6 +19,25 @@ it("keeps every wrapped login URL fragment attached to the complete destination"
     assert.is_true(linked >= 3)
 end)
 
+it("keeps the punctuation around a link out of it", { size = { 60, 15 } }, function()
+    local url = "https://auth.openai.com/codex/device"
+    notices.push("(see " .. url .. ").")
+    ui:take_notices()
+    local plain, linked = "", ""
+    for _, run in ipairs(screen.runs()) do
+        if run.link then
+            assert.equal(url, run.link)
+            assert.equal(url, run.text)
+            linked = linked .. run.text
+        else
+            plain = plain .. run.text
+        end
+    end
+    assert.equal(url, linked)
+    assert.truthy(plain:find("(see", 1, true))
+    assert.truthy(plain:find(").", 1, true))
+end)
+
 it("links only the device verification URL and leaves the code readable", { size = { 50, 15 } }, function()
     local url = "https://auth.openai.com/codex/device"
     notices.push("open " .. url .. " and enter code ABCD-EFGH to sign in; expires in 15 minutes")
