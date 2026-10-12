@@ -198,6 +198,12 @@ function M.stream(request, reply)
     request.model = request.model or current.model
     request.ctx = task.ctx()
     request.provider = { id = provider.id, base_url = current.base_url or "" }
+    local session = request.ctx.session
+    local window = M.window()
+    if session and window then
+        local room = math.max(window - session:used_tokens(), 1)
+        request.max_output = math.min(request.max_output or room, room)
+    end
     if request.reasoning == nil then
         request.reasoning = current.reasoning
     end

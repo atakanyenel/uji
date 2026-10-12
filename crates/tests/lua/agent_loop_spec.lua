@@ -298,6 +298,57 @@ it("sends a message that waits for compaction once it is done", { timeout = 20 }
     assert.equal("done", agent.last_answer(messages))
 end)
 
+it("compacts a conversation that no longer leaves room for its reply", { timeout = 20 }, function()
+    local mock = agent.serve(function()
+        return server.text("done")
+    end)
+    agent.provider(mock.url, 3000)
+    uji.model.use({ provider = "test", model = "m" })
+    local gate = 3000 - 1000
+    while app.session:used_tokens() < gate + 50 do
+        app.session:append({ type = "user", text = "question" })
+        app.session:append({ type = "assistant", text = string.rep("answer ", 40) })
+    end
+    assert.is_true(app.session:used_tokens() < 3000 - math.floor(3000 / 4), "the history should fit the reply it asks for")
+    uji.session.submit("go")
+    wait.eventually(function()
+        return not app.agent:working()
+    end)
+    assert.is_true(compacted(mock))
+end)
+
+it("asks for no more reply than the window has left", { timeout = 20 }, function()
+    local mock = agent.serve(function()
+        return server.text("done")
+    end)
+    uji.provider.add({
+        id = "test",
+        name = "Test",
+        api = uji.api.responses(),
+        base_url = mock.url .. "/v1",
+        models = { { id = "m", context = 1100, output = 1000 } },
+    })
+    uji.model.use({ provider = "test", model = "m" })
+    app.session:append({ type = "user", text = string.rep("filler ", 200) })
+    require("uji.core.task").spawn_in({ session = app.session }, function()
+        require("uji.core.model").generate({ messages = { { type = "user", text = "hi" } } })
+    end)
+    wait.eventually(function()
+        return #mock.requests > 0
+    end)
+    assert.is_true(mock.requests[1].body.max_output_tokens < 1000)
+end)
+
+it("tells how much of the window the conversation may use", function()
+    local mock = agent.serve(function()
+        return server.text("done")
+    end)
+    agent.provider(mock.url, 10000)
+    uji.model.use({ provider = "test", model = "m" })
+    assert.equal(10000, uji.session.context().window)
+    assert.equal(9000, uji.session.context().usable)
+end)
+
 it("shows the compaction while the summary is written, and stops it on esc", { timeout = 20 }, function()
     summarising()
     seeded()

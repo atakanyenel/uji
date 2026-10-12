@@ -40,13 +40,14 @@ local line = string.format("%d tokens over %d requests", usage.total, usage.requ
 
 ## uji.session.context()
 
-Returns a table with `used`, the estimated tokens in the conversation, and
-`window`, the model's context size when uji knows it.
+Returns a table with `used`, the estimated tokens in the conversation, `window`,
+the model's context size when uji knows it, and `usable`, the tokens the
+conversation may use before uji compacts it.
 
 ```lua
 local context = uji.session.context()
-if context.window then
-  uji.notify(string.format("%d%% of context used", context.used * 100 // context.window))
+if context.usable then
+  uji.notify(string.format("%d%% of context used", context.used * 100 // context.usable))
 end
 ```
 

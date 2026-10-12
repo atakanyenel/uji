@@ -148,7 +148,7 @@ function Provider:budget(id)
     if not window then
         return nil
     end
-    local reserve = math.min(found and found.output or MAX_RESERVE, math.floor(window / 4))
+    local reserve = math.min(found and found.output or MAX_RESERVE, window - math.floor(window / 4))
     return { window = window, reserve = reserve }
 end
 

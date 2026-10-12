@@ -56,9 +56,11 @@ function M.usage()
 end
 
 function M.context()
+    local budget = model.budget()
     return {
         used = app.session and app.session:used_tokens() or 0,
         window = model.window(),
+        usable = budget and model.usable(budget),
     }
 end
 
