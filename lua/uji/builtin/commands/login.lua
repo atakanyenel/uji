@@ -44,7 +44,6 @@ local function sign_in(provider, method, url)
     local ok, err = uji.auth.login(provider.id, { method = method })
     if ok then
         configure(provider, url)
-        uji.notify("signed in to " .. provider.id)
     else
         uji.notify("sign-in failed: " .. tostring(err))
     end

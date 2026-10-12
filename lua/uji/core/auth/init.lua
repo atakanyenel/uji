@@ -90,6 +90,8 @@ local function device_login(config)
     return device.login(config, flow)
 end
 
+local METHODS = { browser = browser_login, device = device_login }
+
 function M.login(provider, opts)
     opts = opts or {}
     check.options(opts, "uji.auth.login")
@@ -99,17 +101,18 @@ function M.login(provider, opts)
         end
     end
     local method = opts.method or "browser"
-    if method ~= "browser" and method ~= "device" then
+    local sign_in = METHODS[method]
+    if not sign_in then
         error("uji.auth.login method must be browser or device", 2)
     end
-    if not provider.oauth then
+    local config = provider.oauth
+    if not config then
         return nil, "this provider does not support subscription sign-in"
     end
-    if method == "device" and not provider.oauth.device then
+    if method == "device" and not config.device then
         return nil, "this provider does not support device code sign-in"
     end
-    local sign_in = method == "device" and device_login or browser_login
-    local signed, grant = pcall(sign_in, provider.oauth)
+    local signed, grant = pcall(sign_in, config)
     if not signed then
         return nil, tostring(grant)
     end
