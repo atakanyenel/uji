@@ -15,7 +15,7 @@ futures-util = "0.3"
 glob = "0.3.4"
 globset = "0.4"
 image = { version = "0.25", default-features = false, features = ["gif", "jpeg", "png", "webp"] }
-ito = { git = "https://github.com/uji-labs/ito", rev = "82092594e060962dc18c120fa506e08bb3391088" }
+ito = { git = "https://github.com/uji-labs/ito", branch = "main" }
 keyring = "4"
 linkme = "0.3"
 mlua = { version = "0.12", features = ["luajit52", "vendored", "serde", "async"] }
