@@ -7,7 +7,7 @@
         "additionalProperties": false,
         "properties": {
           "options": {
-            "description": "The answers to choose between, the one you would pick first. Leave it out when the person types the answer.",
+            "description": "The answers to choose between, the one you would pick first. They are shown as a list the person picks from, with a row to write their own answer added for you, so never pass a choice like \"Other\". Leave it out when the person types the answer.",
             "items": {
               "additionalProperties": false,
               "properties": {

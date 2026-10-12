@@ -1,5 +1,6 @@
 local actions = require("uji.core.ui.actions")
 local app = require("uji.core.app")
+local Ask = require("uji.core.ui.views.ask")
 local check = require("uji.core.check")
 local ito = require("ito")
 local images = require("uji.core.images")
@@ -76,6 +77,13 @@ M.ui = {
         check.options(opts, "uji.ui.select")
         choices(opts)
         return ui:ask(Select(opts))
+    end),
+    ask = task.callback(function(opts)
+        check.options(opts, "uji.ui.ask")
+        if type(opts.title) ~= "string" then
+            error("uji.ui.ask needs a title", 3)
+        end
+        return ui:ask(Ask(opts))
     end),
     pick = task.callback(function(opts)
         check.options(opts, "uji.ui.pick")
