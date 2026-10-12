@@ -449,7 +449,7 @@ describe("themes", function()
         ui:present(Select({ title = "Pick one", items = { "a", "b" } }))
         local rows = screen.rows(true)
         assert.equal("    Pick one", (rows[3]:gsub("%s+$", "")))
-        assert.equal("  › a", (rows[6]:gsub("%s+$", "")))
+        assert.equal("  ❯ a", (rows[6]:gsub("%s+$", "")))
     end)
 
     it("draws an approval in a composer that sits in a row", { size = { 40, 12 } }, function()
@@ -505,7 +505,7 @@ describe("themes", function()
         app.session:append({ type = "assistant", text = "Done.", reasoning = "a thought" })
         local rows = transcript_rows()
         local all = table.concat(rows, "\n")
-        for _, gone in ipairs({ "⏺", "⎿", "…", "⋯", "›", "│", "!", "exit", "compacted", "lines" }) do
+        for _, gone in ipairs({ "⏺", "⎿", "…", "⋯", "❯", "│", "!", "exit", "compacted", "lines" }) do
             assert.is_false(has(all, gone), gone .. " is drawn although the theme replaced it")
         end
         for _, shown in ipairs({
@@ -635,7 +635,7 @@ describe("themes", function()
         assert.equal(3, count, "the draft shows input_rows rows")
         seen[#seen + 1] = table.concat(drafted, "\n")
         local all = table.concat(seen, "\n")
-        for _, gone in ipairs({ "›", "█", "•", "┌", "─", "│", "(current)", "proceed", "–" }) do
+        for _, gone in ipairs({ "❯", "█", "•", "┌", "─", "│", "(current)", "proceed", "–" }) do
             assert.is_false(has(all, gone), gone .. " is drawn although the theme replaced it")
         end
     end)

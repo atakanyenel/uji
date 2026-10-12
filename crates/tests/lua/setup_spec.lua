@@ -171,49 +171,36 @@ it("asks for a sign-in before it writes anything", function()
     assert.is_nil(sys.fs.stat(env.cfg .. "/.agents"))
 end)
 
-it("asks a question as a choice and reports what the person picked", function()
+it("asks a question with the choices the model gave, and reports the answer", function()
     local ask = require("uji.core.tool").get("ask_user")
     local asked
-    local select = uji.ui.select
-    uji.ui.select = function(opts)
+    local shown = uji.ui.ask
+    uji.ui.ask = function(opts)
         asked = opts
-        return opts.items[2]
-    end
-    local result = ask.run({ question = "which backend?", options = { "exa", "searxng" } }, {})
-    uji.ui.select = select
-    assert.equal("which backend?", asked.title)
-    assert.equal("exa", asked.label(asked.items[1]))
-    assert.equal("searxng", asked.label(asked.items[2]))
-    assert.equal("the person chose: searxng", result)
-end)
-
-it("asks a question as a choice with a description for each, and reports what the person picked", function()
-    local ask = require("uji.core.tool").get("ask_user")
-    local asked
-    local pick = uji.ui.pick
-    uji.ui.pick = function(opts)
-        asked = opts
-        return opts.items[2]
+        return "searxng"
     end
     local options = {
         { label = "exa", description = "hosted, needs a key" },
         { label = "searxng", description = "self hosted, no key" },
     }
-    assert.equal("the person chose: searxng", ask.run({ question = "which backend?", options = options }, {}))
-    uji.ui.pick = pick
+    local result = ask.run({ question = "which backend?", options = options }, {})
+    uji.ui.ask = shown
     assert.equal("which backend?", asked.title)
-    assert.equal("searxng", asked.label(asked.items[2]))
-    assert.same({ "self hosted, no key" }, asked.preview(asked.items[2]))
+    assert.equal(options, asked.choices)
+    assert.equal("the person answered: searxng", result)
 end)
 
 it("asks a question that the person types, and reports a closed one", function()
     local ask = require("uji.core.tool").get("ask_user")
-    local prompt = uji.ui.prompt
-    uji.ui.prompt = function(opts)
+    local asked
+    local shown = uji.ui.ask
+    uji.ui.ask = function(opts)
+        asked = opts
         return opts.title == "which url?" and "https://search.example" or nil
     end
     assert.equal("the person answered: https://search.example", ask.run({ question = "which url?" }, {}))
+    assert.is_nil(asked.choices)
     assert.equal("the person closed the question without answering", ask.run({ question = "which key?" }, {}))
     assert.equal("error: ask_user needs a question", ask.run({}, {}))
-    uji.ui.prompt = prompt
+    uji.ui.ask = shown
 end)

@@ -1,4 +1,5 @@
 local app = require("uji.core.app")
+local Ask = require("uji.core.ui.views.ask")
 local Confirm = require("uji.core.ui.views.confirm")
 local keys = require("uji.core.ui.keys")
 local Pick = require("uji.core.ui.views.pick")
@@ -82,6 +83,57 @@ describe("the screen", function()
         assert.is_true(has(text, "alpha"), "the matching item is missing")
         assert.is_false(has(text, "beta"), "a filtered item is still drawn")
         assert.is_true(has(text, "al" .. CURSOR), "the query and cursor are missing")
+    end)
+
+    it("draws an ask as numbered choices with a row to write your own answer", { size = { 70, 20 } }, function()
+        ui:present(Ask({
+            title = "which backend?",
+            choices = {
+                { label = "exa", description = "hosted, needs a key" },
+                { label = "searxng", description = "self hosted, no key" },
+            },
+        }))
+        local rows = trimmed(screen.rows())
+        local text = table.concat(rows)
+        assert.is_true(has(text, "which backend?"), "the question is missing")
+        assert.is_true(has(text, "Enter to select · Tab/Arrow keys to navigate · Esc to cancel"), "the keys are missing")
+        local at = screen.find("1. exa")
+        assert.equal("  \226\157\175 1. exa", rows[at + 1], "the first choice should be pointed at")
+        assert.equal("       hosted, needs a key", rows[at + 2], "its description should sit under its label")
+        assert.equal("    2. searxng", rows[at + 3])
+        assert.equal("       self hosted, no key", rows[at + 4])
+        assert.equal("    3. Type something.", rows[at + 5], "the row to write your own answer is missing")
+    end)
+
+    it("answers an ask with the choice that is picked or with the answer that is written", { size = { 60, 20 } }, function()
+        local picked = Ask({
+            title = "which backend?",
+            choices = { { label = "exa", description = "hosted" }, { label = "searxng", description = "self hosted" } },
+        })
+        ui:present(picked)
+        screen.rows()
+        ui:key(keys.chord("down"))
+        ui:key(keys.chord("enter"))
+        assert.equal("searxng", (picked.answer:await()))
+
+        local written = Ask({ title = "which url?", choices = { { label = "one", description = "the only one" } } })
+        ui:present(written)
+        screen.rows()
+        ui:key(keys.chord("down"))
+        for char in ("search.example"):gmatch(".") do
+            ui:key(keys.chord(char))
+        end
+        ui:key(keys.chord("enter"))
+        assert.equal("search.example", (written.answer:await()))
+
+        local closed = Ask({ title = "which key?", choices = { { label = "one", description = "the only one" } } })
+        ui:present(closed)
+        screen.rows()
+        ui:key(keys.chord("x"))
+        assert.is_true(has(screen.screen(), "1. one"), "typing on a choice should leave it alone")
+        assert.equal("", ui.composer:text(), "typing on a choice should not write in the draft")
+        ui:key(keys.chord("esc"))
+        assert.is_nil((closed.answer:await()))
     end)
 
     it("draws the counts and the preview of a picker", { size = { 60, 20 } }, function()

@@ -122,7 +122,7 @@ local SYMBOLS = {
     cursor = "█",
     input = "",
     mask = "•",
-    pointer = "›",
+    pointer = "❯",
     prompt = ">",
 }
 
@@ -156,6 +156,8 @@ local TEXT = {
     jump = "Jump to bottom",
     ordered = "%d.",
     current = "(current)",
+    other = "Type something.",
+    choices = "Enter to select · Tab/Arrow keys to navigate · Esc to cancel",
     range = "%d–%d of %d",
     scroll = "lines %d-%d of %d, scroll for more",
     sessions_title = "Sessions in %s",
