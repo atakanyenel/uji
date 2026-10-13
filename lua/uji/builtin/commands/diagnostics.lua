@@ -1,4 +1,5 @@
 local text = require("ito").text
+local ui = require("uji.core.ui")
 
 uji.command.add("diagnostics", {
     desc = "show the errors uji ran into",
@@ -8,15 +9,18 @@ uji.command.add("diagnostics", {
             uji.notify("no diagnostics yet")
             return
         end
-        uji.ui.pick({
+        local entry = uji.ui.pick({
             title = "Diagnostics",
             items = entries,
-            label = function(entry)
-                return entry.time .. "  " .. entry.source .. "  " .. (text.lines(entry.text)[1] or "")
+            label = function(item)
+                return item.time .. "  " .. item.source .. "  " .. (text.lines(item.text)[1] or "")
             end,
-            preview = function(entry)
-                return text.lines(entry.text)
+            preview = function(item)
+                return text.lines(item.text)
             end,
         })
+        if entry then
+            ui:copy(entry.time .. " " .. entry.source .. "\n" .. entry.text)
+        end
     end,
 })
