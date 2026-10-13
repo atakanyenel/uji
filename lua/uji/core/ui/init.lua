@@ -187,7 +187,7 @@ function Ui:compacting()
     return app.agent ~= nil and app.agent:compacting()
 end
 
-function Ui:compaction()
+function Ui:current_compaction()
     local agent = app.agent
     if not agent or not agent:compacting() then
         return nil
@@ -636,6 +636,7 @@ function Ui:tick()
             sys.sleep(self.theme.tokens.limits.spinner_interval)
             if self:working() then
                 self.activity = self:current_activity()
+                self.compaction = self:current_compaction()
                 self:invalidate()
             end
         end
@@ -727,6 +728,7 @@ function Ui:listen()
         end,
         status_changed = function()
             self.activity = self:current_activity()
+            self.compaction = self:current_compaction()
             self:tick()
             self:invalidate()
         end,

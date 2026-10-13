@@ -353,7 +353,7 @@ describe("the screen", function()
     it("replaces the input with the compaction while uji compacts", { size = { 80, 12 } }, function()
         app.agent.state = "working"
         app.agent.started = sys.os.clock()
-        app.agent.compaction = { started = app.agent.started, messages = 42 }
+        app.agent:compaction_started(42)
         local rows = trimmed(screen.rows(true))
         assert.is_true(any(rows, "Compacting the conversation · esc cancels · 42 earlier messages"), table.concat(rows, "\n"))
         assert.is_nil(screen.find("█"))

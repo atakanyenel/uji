@@ -133,7 +133,7 @@ describe("the default look", function()
     it("draws the compaction in place of the input", { size = { 80, 12 } }, function()
         app.agent.state = "working"
         app.agent.started = sys.os.clock()
-        app.agent.compaction = { started = app.agent.started, messages = 42 }
+        app.agent:compaction_started(42)
         look("compacting")
     end)
 
