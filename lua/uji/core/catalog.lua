@@ -1,3 +1,4 @@
+local providers = require("uji.builtin.providers")
 local check = require("uji.core.check")
 local list = require("uji.utils.list")
 local plugin = require("uji.core.plugin")
@@ -226,23 +227,25 @@ local function create(spec)
     }, Provider)
 end
 
+local function found(id)
+    return list.found(M.providers, function(provider)
+        return provider.id == id
+    end)
+end
+
 function M.get(id)
-    for _, provider in ipairs(M.providers) do
-        if provider.id == id then
-            return provider
-        end
-    end
+    providers.load(id)
+    return found(id)
 end
 
 function M.by_name(name)
-    for _, provider in ipairs(M.providers) do
-        if provider.name == name then
-            return provider
-        end
-    end
+    return list.found(M.providers, function(provider)
+        return provider.name == name
+    end)
 end
 
 function M.all()
+    providers.all()
     return M.providers
 end
 
@@ -257,7 +260,7 @@ function M.add(patch)
     end
     api(patch.api, patch.id)
     loop(patch.loop, patch.id)
-    local existing = M.get(patch.id)
+    local existing = found(patch.id)
     if existing then
         existing:apply(patch)
         return

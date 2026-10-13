@@ -1,6 +1,9 @@
+local providers = require("uji.builtin.providers")
 local sys = require("uji.sys")
+local list = require("uji.utils.list")
 
 local STATE = uji.provider.STATE
+local PREFIX = "uji.builtin.providers."
 
 local function counted(models, fails)
     local calls = { count = 0 }
@@ -109,4 +112,24 @@ it("gives nothing for an unknown provider and points a load of one at the caller
     assert.is_false(ok)
     assert.truthy(err:find("providers_spec.lua", 1, true))
     assert.truthy(err:find("no provider is registered as nobody", 1, true))
+end)
+
+it("names every provider after the file that registers it", function()
+    providers.all()
+    local registered = {}
+    for _, provider in ipairs(uji.provider.list()) do
+        registered[provider.id] = true
+    end
+    local names = list.mapped(uji.modules("uji.builtin.providers"), function(module)
+        return module:sub(#PREFIX + 1)
+    end)
+    for _, id in ipairs(names) do
+        assert.is_true(registered[id] == true, id .. " has no provider named after its file")
+    end
+end)
+
+it("leaves a provider file alone until something asks for it", function()
+    assert.is_nil(package.loaded[PREFIX .. "openrouter"], "the boot loaded it anyway")
+    assert.is_not_nil(uji.provider.get("openrouter"))
+    assert.is_not_nil(package.loaded[PREFIX .. "openrouter"], "asking for it loads it")
 end)

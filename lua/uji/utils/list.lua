@@ -65,4 +65,12 @@ function M.flattened(lists)
     return out
 end
 
+function M.found(list, match)
+    for _, value in ipairs(list) do
+        if match(value) then
+            return value
+        end
+    end
+end
+
 return M
