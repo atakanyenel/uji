@@ -1,4 +1,3 @@
-local book = require("uji.docs")
 local list = require("uji.utils.list")
 local paths = require("uji.core.paths")
 local scaffold = require("uji.core.scaffold")
@@ -158,6 +157,7 @@ local function policy(text)
 end
 
 local function page(name, cut)
+    local book = require("uji.docs")
     local text = book[name]
     if not text then
         return nil
