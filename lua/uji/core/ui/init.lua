@@ -67,7 +67,6 @@ function Ui:init()
     self.sends, self.sending = task.sequence()
     self.stream = Stream()
     self.reasoning = ""
-    self.notices = {}
     self.running = nil
     self.modal = nil
     self.presented = {}
@@ -187,7 +186,7 @@ function Ui:compacting()
     return app.agent ~= nil and app.agent:compacting()
 end
 
-function Ui:compaction()
+function Ui:current_compaction()
     local agent = app.agent
     if not agent or not agent:compacting() then
         return nil
@@ -527,12 +526,12 @@ function Ui:key(chord)
     self:invalidate()
 end
 
-function Ui:flash(message)
+function Ui:flash(message, seconds)
     local shown = { text = message }
     self.flashed = shown
     self:invalidate()
     task.spawn(function()
-        sys.sleep(self.theme.tokens.limits.flash)
+        sys.sleep(seconds or self.theme.tokens.limits.flash)
         if self.flashed == shown then
             self.flashed = nil
             self:invalidate()
@@ -544,11 +543,11 @@ function Ui:copy(value)
     local count = #ito.text.lines(value)
     local words = self.theme.tokens.text
     if sys.clipboard.set(value) then
-        self:flash(string.format(words.copied, count))
+        notices.push(string.format(words.copied, count))
         return
     end
     self.screen:write("\27]52;c;" .. sys.base64.encode(value) .. "\7")
-    self:flash(string.format(words.copied_terminal, count))
+    notices.push(string.format(words.copied_terminal, count))
 end
 
 function Ui:mouse(incoming)
@@ -636,6 +635,7 @@ function Ui:tick()
             sys.sleep(self.theme.tokens.limits.spinner_interval)
             if self:working() then
                 self.activity = self:current_activity()
+                self.compaction = self:current_compaction()
                 self:invalidate()
             end
         end
@@ -687,8 +687,9 @@ function Ui:clear_stream()
 end
 
 function Ui:take_notices()
-    self.notices = list.extended(self.notices, notices.take())
-    self:invalidate()
+    for _, notice in ipairs(notices.take()) do
+        self:flash(notice.text, notice.seconds)
+    end
 end
 
 function Ui:confirm(request)
@@ -712,7 +713,6 @@ function Ui:listen()
             self:take_notices()
         end,
         message_submitted = function()
-            self.notices = {}
             self.scroll:to_end()
             self:invalidate()
         end,
@@ -727,6 +727,7 @@ function Ui:listen()
         end,
         status_changed = function()
             self.activity = self:current_activity()
+            self.compaction = self:current_compaction()
             self:tick()
             self:invalidate()
         end,

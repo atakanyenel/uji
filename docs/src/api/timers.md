@@ -24,10 +24,12 @@ local cancel = uji.defer(30, function()
 end)
 ```
 
-## uji.notify(message)
+## uji.notify(message, seconds)
 
-Shows a notice in the transcript.
+Shows a notice: a line at the top right of the screen that fades on its own.
+`seconds` is how long it stays, the theme's `limits.flash` by default.
 
 ```lua
 uji.notify("hello from init.lua")
+uji.notify("this one is worth reading", 10)
 ```

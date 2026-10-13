@@ -201,7 +201,7 @@ describe("themes", function()
         colours(found)
         ui:set_input("a draft")
         colours(found)
-        local row = screen.find("a notice")
+        local row = screen.find("Read the notes and run the build")
         ui:mouse({ kind = "down", button = "left", row = row, col = 1 })
         ui:mouse({ kind = "drag", button = "left", row = row, col = 5 })
         ui:flash("copied")
@@ -433,7 +433,7 @@ describe("themes", function()
         screen.rows(true)
         assert.equal(count, #uji.diagnostics.list(), "the same problem is recorded once")
         ui:take_notices()
-        assert.same({}, ui.notices)
+        assert.is_nil(ui.flashed)
     end)
 
     it("floats a picker when the screen has no place for pickers", { size = { 40, 12 } }, function()
@@ -470,7 +470,7 @@ describe("themes", function()
         local rows = screen.rows(true)
         ui:take_notices()
         assert.is_true(has(table.concat(rows, "\n"), "1. Yes, proceed (y)"))
-        assert.same({}, ui.notices)
+        assert.is_nil(ui.flashed)
     end)
 
     it("clears the room of a picker drawn over the transcript", { size = { 40, 12 } }, function()
@@ -515,7 +515,6 @@ describe("themes", function()
             "      M> 9 more",
             " S> false  (status 1)",
             "squashed",
-            " N> a notice for you",
             " Q> a queued message",
             " R> run_command  compiling the project",
             " H> a thought",
@@ -712,8 +711,8 @@ describe("themes", function()
         uji.ui.configure({
             theme = default({
                 views = {
-                    [uji.ui.Notice] = function(props)
-                        return ito.Lines({ { { "<<" .. props.text .. ">>", ito.theme().styles.notice } } })
+                    [uji.ui.Running] = function(props)
+                        return ito.Lines({ { { "<<" .. props.name .. ">>", ito.theme().styles.dim } } })
                     end,
                     [uji.ui.Queued] = function()
                         error("no queue today", 0)
@@ -721,11 +720,10 @@ describe("themes", function()
                 },
             }),
         })
-        require("uji.core.notices").push("hello")
-        ui:take_notices()
+        ui.running = { name = "run_command", line = "compiling" }
         app.agent.queue = { { text = "later" } }
         local all = screen.screen()
-        assert.is_true(has(all, "<<hello>>"))
+        assert.is_true(has(all, "<<run_command>>"))
         assert.is_true(has(all, " › later"))
         assert.equal(1, diagnosed("theme view: no queue today"))
         local ok, err = pcall(uji.ui.configure, { theme = default({ views = { bogus = function() end } }) })
@@ -880,11 +878,7 @@ return require("uji.themes.default")({
         ui.theme:restore()
         assert.equal("kept", uji.ui.theme())
         ui:take_notices()
-        local raised = 0
-        for _, notice in ipairs(ui.notices) do
-            raised = raised + (has(notice, "saved theme: no theme named gone") and 1 or 0)
-        end
-        assert.equal(1, raised)
+        assert.is_true(has(ui.flashed.text, "saved theme: no theme named gone"), tostring(ui.flashed.text))
         local ok, err = pcall(uji.ui.save_theme, 42)
         assert.is_false(ok)
         assert.is_true(has(err, "uji.ui.save_theme needs a name"))

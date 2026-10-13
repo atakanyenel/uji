@@ -194,7 +194,7 @@ The default theme has these styles.
 | `chosen_name` | The name on a chosen suggestion. | `accent` on `selected_bg` |
 | `chosen_desc` | The description on a chosen suggestion. | `muted` on `selected_bg` |
 | `error` | Errors and failed tool output. | `error` |
-| `notice` | Notices. | `notice` |
+| `notice` | A notice a `uji.ui.Notice` draws. | `notice` |
 | `cursor` | The cursor. | `cursor`, blink |
 | `input` | Text on the input line. | `text` |
 | `border` | Borders. | `muted` |
@@ -224,7 +224,7 @@ The default theme has these styles.
 | `symbols.more` | The mark before the count of hidden output lines. | `…` |
 | `symbols.shell` | The mark before a command you ran. | `!` |
 | `symbols.rule` | The line drawn where the session was compacted. | `─` |
-| `symbols.notice` | The mark before a notice. | `!` |
+| `symbols.notice` | The mark `uji.ui.Notice` puts before its text. | `!` |
 | `symbols.thinking` | The bar beside the model's thinking. | `│` |
 | `symbols.queued` | The mark before a queued message. | `›` |
 | `symbols.running` | The mark before the tool that is running. | `⋯` |
@@ -268,7 +268,7 @@ The default theme has these styles.
 | `limits.diff_context` | Unchanged lines that [`uji.diff`](../api/tool.md#ujidiffold-new-path) keeps around each change. | `3` |
 | `limits.argument_preview` | Characters of a tool call's arguments shown when it has no subject. | `200` |
 | `limits.message_gap` | Blank rows between messages. | `1` |
-| `limits.section_gap` | Blank rows before the notices, the queue and the running tool. | `1` |
+| `limits.section_gap` | Blank rows before the queue and the running tool. | `1` |
 | `limits.bottom_gap` | Rows kept free under the transcript, where the jump shows. | `1` |
 | `limits.indent` | Columns each list or quote level is indented by. | `2` |
 | `limits.rule_width` | The longest a markdown rule is drawn. | `60` |
@@ -280,7 +280,7 @@ The default theme has these styles.
 | `limits.preview_min` | The width a picker needs on each side before it shows a preview. | `24` |
 | `limits.sessions_updated`, `limits.sessions_id` | The widths of the UPDATED and ID columns of `uji list`. | `14`, `36` |
 | `limits.float_width`, `limits.float_height` | The share of the screen, in percent, that a floating picker or overlay takes. | `90`, `80` |
-| `limits.flash` | Seconds the copy message stays up. | `1` |
+| `limits.flash` | Seconds a notice stays up, until one asks for its own time. | `1` |
 | `limits.paste_lines`, `limits.paste_chars` | The size a paste can be before the input line shows a placeholder for it. | `1`, `80` |
 
 A key uji does not know is an error, so a misspelled one does not go unnoticed.
@@ -385,7 +385,7 @@ local ito = require("ito")
 
 return require("uji.themes.default")({
   views = {
-    [uji.ui.Notice] = function(props)
+    [uji.ui.Queued] = function(props)
       local styles = ito.theme().styles
       return ito.HStack({ ito.Text("note: "):style(styles.accent), ito.Text(props.text):style(styles.text) })
     end,
@@ -402,7 +402,7 @@ return require("uji.themes.default")({
 | `uji.ui.ToolOutput` | `content`, `summary`, `diff`, `failed`, `expanded`, `toggle` | A tool's result. It shows the `diff` when the result has one with changes, otherwise the `summary` until it is opened, otherwise the content. `toggle` opens or folds it, and the default view calls it when you click a line. |
 | `uji.ui.Diff` | `diff`, `limit`, `toggle` | The lines of a diff, with their numbers and colours, in a tool's result and in the approval question. `diff` is what [`uji.diff`](../api/tool.md#ujidiffold-new-path) gives, `limit`, when given, folds it after that many rows, and `toggle` opens or folds it. |
 | `uji.ui.Shell` | `command`, `code`, `output`, `failed`, `expanded`, `toggle` | A command you ran with `!`. |
-| `uji.ui.SystemMessage`, `uji.ui.ErrorMessage`, `uji.ui.Notice`, `uji.ui.Queued`, `uji.ui.Thinking` | `text` | A message or line of that kind. |
+| `uji.ui.SystemMessage`, `uji.ui.ErrorMessage`, `uji.ui.Queued`, `uji.ui.Thinking` | `text` | A message or line of that kind. |
 | `uji.ui.Partial` | `text` | The last line of a reply that is still arriving. |
 | `uji.ui.Compaction` | none | The place where the session was compacted. |
 | `uji.ui.Running` | `name`, `line` | The tool that is running and the last line it printed. |

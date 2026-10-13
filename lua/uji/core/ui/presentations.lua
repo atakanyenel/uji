@@ -65,7 +65,7 @@ M.Composer = ito.view(function()
     local ui = host.Host.current
     local takeovers = ui:takeovers()
     if #takeovers == 0 then
-        local compaction = ui:compaction()
+        local compaction = ui.compaction
         return compaction and Compacting(compaction) or Input()
     end
     return ito.VStack(layers(takeovers, function(modal)

@@ -1,13 +1,12 @@
+local diagnostics = require("uji.core.diagnostics")
 local ito = require("ito")
 local Registry = require("uji.core.registry")
 local plugin = require("uji.core.plugin")
-local sys = require("uji.sys")
 local tables = require("uji.core.tables")
 
 local M = {
     events = {},
     counter = 0,
-    report = function() end,
 }
 
 local function registry(event)
@@ -19,8 +18,8 @@ local function registry(event)
     return found
 end
 
-local function failed(event, err)
-    M.report(event .. " handler error: " .. sys.message(err))
+local function logged(event, err)
+    diagnostics.report(event, diagnostics.capture(err))
 end
 
 function M.on(event, handler, opts)
@@ -53,7 +52,7 @@ function M.emit(event, payload)
     for _, handler in found:each() do
         local ok, err = pcall(handler, payload)
         if not ok then
-            failed(event, err)
+            logged(event, err)
         end
     end
 end
@@ -67,7 +66,7 @@ function M.ask(event, payload)
     for _, handler in found:each() do
         local ok, answer = pcall(handler, payload)
         if not ok then
-            failed(event, answer)
+            logged(event, answer)
         elseif answer ~= nil then
             return answer
         end
@@ -81,7 +80,7 @@ function M.fold(event, payload, field)
         for _, handler in found:each() do
             local ok, value = pcall(handler, payload)
             if not ok then
-                failed(event, value)
+                logged(event, value)
             elseif value ~= nil then
                 payload[field] = value
             end

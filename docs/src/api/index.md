@@ -183,7 +183,7 @@ Every function lives under the global `uji` table. A function that finishes late
 |---|---|
 | [`uji.schedule(callback)`](timers.md#ujischedulecallback) | Runs `callback` once the code that called it has finished. |
 | [`uji.defer(seconds, callback)`](timers.md#ujideferseconds-callback) | Runs `callback` after a delay and returns a function that cancels it. |
-| [`uji.notify(message)`](timers.md#ujinotifymessage) | Shows a notice in the transcript. |
+| [`uji.notify(message, seconds)`](timers.md#ujinotifymessage-seconds) | Shows a notice at the top right of the screen, `seconds` by default the theme's `limits.flash`. |
 
 ## Diagnostics
 

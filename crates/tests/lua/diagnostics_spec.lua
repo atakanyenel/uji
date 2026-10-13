@@ -4,6 +4,7 @@ local paths = require("uji.core.paths")
 local screen = require("support.ui")
 local sys = require("uji.sys")
 local ui = require("uji.core.ui")
+local wait = require("support.wait")
 
 local function has(value, part)
     return tostring(value):find(part, 1, true) ~= nil
@@ -27,7 +28,7 @@ it("records a broken screen once with its traceback, and shows no notice", { siz
     assert.is_true(has(entries[1].text, "a view must give a view, not a table"))
     assert.is_true(has(entries[1].text, "stack traceback"))
     ui:take_notices()
-    assert.same({}, ui.notices)
+    assert.is_nil(ui.flashed)
 end)
 
 it("records a broken view once however many messages use it", { size = { 40, 20 } }, function()
@@ -67,7 +68,68 @@ end)
 it("says when there is nothing to show", function()
     require("uji.core.command").run("diagnostics")
     ui:take_notices()
-    assert.is_true(has(table.concat(ui.notices, "\n"), "no diagnostics yet"))
+    assert.is_true(has(ui.flashed.text, "no diagnostics yet"))
+end)
+
+local function copied_to()
+    local copied = {}
+    sys.clipboard.set = function(value)
+        copied.value = value
+        return true
+    end
+    return copied
+end
+
+local function opened()
+    local finished = sys.promise()
+    sys.task.spawn(function()
+        require("uji.core.command").run("diagnostics")
+        finished:resolve()
+    end)
+    wait.eventually(function()
+        return ui.modal ~= nil
+    end)
+    return finished
+end
+
+local function entry_text(entry)
+    return entry.time .. " " .. entry.source .. "\n" .. entry.text
+end
+
+it("copies the entry enter takes out of the picker, and says so", { size = { 60, 12 } }, function()
+    diagnostics.report("render", { text = "older", trace = "stack traceback:\n\tsomewhere" })
+    local copied = copied_to()
+    local finished = opened()
+    screen.press("enter")
+    finished:await()
+    local entry = uji.diagnostics.list()[1]
+    assert.equal(entry_text(entry), copied.value, "the whole entry goes to the clipboard")
+    assert.equal("copied 4 line(s)", ui.flashed.text, "and the flash counts what went")
+    assert.is_nil(ui.modal, "the picker closes")
+end)
+
+it("copies the entry the cursor is on, not the newest one", { size = { 60, 12 } }, function()
+    diagnostics.report("render", { text = "older" })
+    diagnostics.report("screen", { text = "newer" })
+    local copied = copied_to()
+    local finished = opened()
+    screen.press("down")
+    screen.press("enter")
+    finished:await()
+    local entries = uji.diagnostics.list()
+    assert.equal(2, #entries)
+    assert.equal(entry_text(entries[2]), copied.value, "the second entry is the older one")
+    assert.is_true(copied.value:find("older", 1, true) ~= nil, copied.value)
+end)
+
+it("copies nothing when esc leaves the picker", { size = { 60, 12 } }, function()
+    diagnostics.report("render", { text = "older" })
+    local copied = copied_to()
+    local finished = opened()
+    screen.press("esc")
+    finished:await()
+    assert.is_nil(copied.value)
+    assert.is_nil(ui.modal, "the picker closes")
 end)
 
 it("keeps the log to the newest entries", function()

@@ -3,6 +3,7 @@ local app = require("uji.core.app")
 local sandbox = require("support.sandbox")
 local screen = require("support.ui")
 local server = require("support.server")
+local sys = require("uji.sys")
 local wait = require("support.wait")
 
 local function run(url, opts)
@@ -27,10 +28,10 @@ end
 
 -- A model that takes its time over the summary, so a test can look at uji
 -- while the compaction is in flight.
-local function summarising()
+local function summarising(seconds)
     local mock = agent.serve(function()
         return server.text("done")
-    end, { summary = 0.5 })
+    end, { summary = seconds or 0.5 })
     agent.provider(mock.url, 4000)
     uji.model.use({ provider = "test", model = "m" })
     return mock
@@ -366,6 +367,25 @@ it("shows the compaction while the summary is written, and stops it on esc", { t
     for _, message in ipairs(app.session:messages()) do
         assert.is_not_equal("compaction", message.type)
     end
+end)
+
+it("moves the spinner while the summary is written", { timeout = 20 }, function()
+    summarising(2)
+    seeded()
+    uji.session.submit("go")
+    wait.eventually(function()
+        return app.agent:compacting()
+    end)
+    local function line()
+        for _, row in ipairs(screen.rows(true)) do
+            if row:find("Compacting the conversation", 1, true) then
+                return row
+            end
+        end
+    end
+    local first = assert(line(), "the compaction line is not on screen")
+    sys.sleep(0.25)
+    assert.is_not_equal(first, line(), "the compaction line never moved")
 end)
 
 it("shows the compaction a turn folds on its own", { timeout = 20 }, function()
