@@ -1,5 +1,4 @@
 local app = require("uji.core.app")
-local notices = require("uji.core.notices")
 local ui = require("uji.core.ui")
 
 local M = {}
@@ -72,8 +71,6 @@ function M.messages()
     session:append({ type = "error", text = "Something went wrong" })
     session:append({ type = "compaction", summary = "earlier work" })
     session:append({ type = "user", text = "Thanks" })
-    notices.push("a notice for you")
-    ui:take_notices()
     app.agent.queue = { { text = "a queued message" } }
     ui.running = { name = "run_command", line = "compiling the project" }
 end

@@ -1,25 +1,32 @@
-local diagnostics = require("uji.core.diagnostics")
 local event = require("uji.core.event")
 
-local M = { pending = {}, delivering = false }
+local M = { pending = {} }
 
-function M.push(message)
-    message = tostring(message)
-    M.pending[#M.pending + 1] = message
-    if M.delivering then
+local announcing = false
+local announced = 0
+
+local function announce()
+    if announcing then
         return
     end
-    M.delivering = true
-    local ok, err = pcall(event.emit, "notice", { text = message })
-    M.delivering = false
-    if not ok then
-        diagnostics.report("notice", diagnostics.capture(err))
+    announcing = true
+    while announced < #M.pending do
+        announced = announced + 1
+        local notice = M.pending[announced]
+        event.emit("notice", { text = notice.text, seconds = notice.seconds })
     end
+    announcing = false
+end
+
+function M.push(message, seconds)
+    M.pending[#M.pending + 1] = { text = tostring(message), seconds = seconds }
+    announce()
 end
 
 function M.take()
     local taken = M.pending
     M.pending = {}
+    announced = 0
     return taken
 end
 

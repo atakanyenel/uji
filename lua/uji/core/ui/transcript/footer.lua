@@ -2,7 +2,6 @@ local app = require("uji.core.app")
 local Custom = require("uji.core.ui.transcript.custom")
 local host = require("uji.core.ui.host")
 local ito = require("ito")
-local Notice = require("uji.core.ui.transcript.notice")
 local Queued = require("uji.core.ui.transcript.queued")
 local Running = require("uji.core.ui.transcript.running")
 
@@ -10,12 +9,6 @@ return ito.view(function()
     local ui = host.Host.current
     local gap = ito.theme().limits.section_gap
     local rows = {}
-    if #ui.notices > 0 then
-        rows[#rows + 1] = ito.Spacer():height(gap)
-        for _, notice in ipairs(ui.notices) do
-            rows[#rows + 1] = Custom({ payload = { type = "notice", text = notice }, fallback = Notice({ text = notice }) })
-        end
-    end
     local running = ui.running
     if running then
         rows[#rows + 1] = ito.Spacer():height(gap)

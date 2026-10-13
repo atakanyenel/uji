@@ -162,7 +162,7 @@ end)
 Runs when uji draws a block of the transcript. The payload has `type`, `text`
 and `width`, the columns the transcript has, and also `name` for tool results
 and `tool_calls` for assistant messages. Besides the message types, `type` can
-be `notice`, `pending`, `thinking` or `queued`. Return a
+be `pending`, `thinking` or `queued`. Return a
 [view](../ito/views.md) to draw instead of the default. The first handler to
 return a view wins, and a handler that returns something else is skipped with a
 notice.

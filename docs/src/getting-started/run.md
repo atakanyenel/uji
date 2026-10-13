@@ -39,7 +39,7 @@ With `--json`, each line is one event.
 | `session` | `id` | First, with the id of the new session. |
 | `message` | `message` | A message joined the conversation, in the form uji saves it. |
 | `progress` | `tool`, `line` | A running tool printed a line. |
-| `notice` | `text` | uji has something to tell you, such as a plugin error. |
+| `notice` | `text`, `seconds` | uji has something to tell you, such as a plugin error. `seconds` is there when the notice asked for its own time. |
 | `done` | `text` or `error`, and `usage` | Last. `usage` has `input`, `output`, `cache_read` and `cache_write` tokens for the whole run. |
 
 ```sh

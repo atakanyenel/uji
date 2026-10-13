@@ -28,7 +28,7 @@ it("records a broken screen once with its traceback, and shows no notice", { siz
     assert.is_true(has(entries[1].text, "a view must give a view, not a table"))
     assert.is_true(has(entries[1].text, "stack traceback"))
     ui:take_notices()
-    assert.same({}, ui.notices)
+    assert.is_nil(ui.flashed)
 end)
 
 it("records a broken view once however many messages use it", { size = { 40, 20 } }, function()
@@ -68,7 +68,7 @@ end)
 it("says when there is nothing to show", function()
     require("uji.core.command").run("diagnostics")
     ui:take_notices()
-    assert.is_true(has(table.concat(ui.notices, "\n"), "no diagnostics yet"))
+    assert.is_true(has(ui.flashed.text, "no diagnostics yet"))
 end)
 
 local function copied_to()
@@ -80,8 +80,6 @@ local function copied_to()
     return copied
 end
 
--- Opens the picker the way `/diagnostics` does and hands back the promise that
--- settles when the command is done, so a test can press keys at it meanwhile.
 local function opened()
     local finished = sys.promise()
     sys.task.spawn(function()

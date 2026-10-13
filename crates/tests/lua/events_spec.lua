@@ -24,25 +24,26 @@ it("keeps a handler error out of the notices", function()
     assert.is_true(entries[1].text:find("stack traceback", 1, true) ~= nil, entries[1].text)
 end)
 
--- uji's own notice handler takes what is pending as the notices are handed
--- out, so what is left here is the notice the handler pushed for itself: it is
--- kept, and handed out with the next notice rather than from inside this one.
-it("takes a notice a handler pushes while the notices are being handed out", function()
+it("hands out a notice a handler pushes right after the one it answered", function()
     local heard = {}
     local name = event.on("notice", function(notice)
         heard[#heard + 1] = notice.text
-        notices.push(notice.text .. " again")
+        if notice.text == "hello" then
+            notices.push("hello again")
+        end
     end)
     notices.push("hello")
     event.off("notice", name)
-    assert.same({ "hello" }, heard, "a handler is not handed a notice from inside its own delivery")
-    assert.same({ "hello again" }, notices.take())
+    assert.same({ "hello", "hello again" }, heard)
+end)
 
-    local later = {}
-    local other = event.on("notice", function(notice)
-        later[#later + 1] = notice.text
+it("hands each notice out once", function()
+    local heard = {}
+    local name = event.on("notice", function(notice)
+        heard[#heard + 1] = notice.text
     end)
-    notices.push("next")
-    event.off("notice", other)
-    assert.same({ "next" }, later, "the notice after that is handed out as usual")
+    notices.push("first")
+    notices.push("second")
+    event.off("notice", name)
+    assert.same({ "first", "second" }, heard)
 end)

@@ -42,9 +42,9 @@ local function listen(session, json)
             write(io.stdout, line)
         end
     end
-    local function notice(message)
+    local function notice(message, seconds)
         if json then
-            emit(sys.json.encode({ type = "notice", text = message }))
+            emit(sys.json.encode({ type = "notice", text = message, seconds = seconds }))
         else
             write(io.stderr, "uji: " .. message)
         end
@@ -60,7 +60,7 @@ local function listen(session, json)
             end
         end,
         notice = function(payload)
-            notice(payload.text)
+            notice(payload.text, payload.seconds)
         end,
         turn_finished = function()
             local entries = session:entries()
@@ -82,8 +82,8 @@ local function listen(session, json)
         event.on(name, handler, { name = "uji.run." .. name })
     end
     emit(sys.json.encode({ type = "session", id = session.id }))
-    for _, message in ipairs(notices.take()) do
-        notice(message)
+    for _, queued in ipairs(notices.take()) do
+        notice(queued.text, queued.seconds)
     end
 end
 

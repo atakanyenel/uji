@@ -1,11 +1,14 @@
-local notices = require("uji.core.notices")
 local screen = require("support.ui")
-local ui = require("uji.core.ui")
+
+local function showing(text)
+    uji.ui.overlay(function()
+        return uji.ui.Notice({ text = text })
+    end)
+end
 
 it("keeps every wrapped login URL fragment attached to the complete destination", { size = { 44, 20 } }, function()
     local url = "https://auth.openai.com/oauth/authorize?client_id=example&state=abcdefghijklmnopqrstuvwxyz0123456789"
-    notices.push("opened your browser to sign in - " .. url)
-    ui:take_notices()
+    showing("opened your browser to sign in - " .. url)
     local joined, linked = "", 0
     for _, run in ipairs(screen.runs()) do
         if run.link then
@@ -21,8 +24,7 @@ end)
 
 it("keeps the punctuation around a link out of it", { size = { 60, 15 } }, function()
     local url = "https://auth.openai.com/codex/device"
-    notices.push("(see " .. url .. ").")
-    ui:take_notices()
+    showing("(see " .. url .. ").")
     local plain, linked = "", ""
     for _, run in ipairs(screen.runs()) do
         if run.link then
@@ -40,8 +42,7 @@ end)
 
 it("links only the device verification URL and leaves the code readable", { size = { 50, 15 } }, function()
     local url = "https://auth.openai.com/codex/device"
-    notices.push("open " .. url .. " and enter code ABCD-EFGH to sign in; expires in 15 minutes")
-    ui:take_notices()
+    showing("open " .. url .. " and enter code ABCD-EFGH to sign in; expires in 15 minutes")
     local joined, plain = "", ""
     for _, run in ipairs(screen.runs()) do
         if run.link then

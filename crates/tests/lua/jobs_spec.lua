@@ -70,7 +70,7 @@ it("starts a background job and wakes the model when it ends", { timeout = 10 },
     assert.equal("finished, exit 0", reported.status)
     assert.is_true(has(reported.output, "done"), reported.output)
     ui:take_notices()
-    assert.is_false(has(table.concat(ui.notices, "\n"), "job 1"), "a finished job joins the chat, not the notices")
+    assert.is_nil(ui.flashed, "a finished job joins the chat, not the notices")
 end)
 
 it("moves a command to the background at its timeout", { timeout = 10 }, function()
@@ -161,7 +161,7 @@ it("names jobs in the theme's words and reports a stopped one in the chat", { si
         return screen.find("Job(echo hi; sleep 5) stopped") ~= nil
     end)
     ui:take_notices()
-    assert.is_false(has(table.concat(ui.notices, "\n"), "task 1"), "a stopped job joins the chat, not the notices")
+    assert.is_nil(ui.flashed, "a stopped job joins the chat, not the notices")
 end)
 
 it("waits for your next message when waking is off", { timeout = 10 }, function()

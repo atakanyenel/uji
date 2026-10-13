@@ -64,14 +64,13 @@
 36|
   |0+80 fg=#D4D4D4 bg=#343541
 37|
-38| ! a notice for you
-  |1+1 fg=Red; 3+16 fg=Red
-39|
-40| ⋯ run_command  compiling the project
+38| ⋯ run_command  compiling the project
   |1+1 fg=#808080 dim; 3+34 fg=#808080 dim
-41|
-42| › a queued message
+39|
+40| › a queued message
   |1+1 fg=#808080 dim; 3+16 fg=#808080 dim
+41|
+42|
 43|
 44|
 45|
