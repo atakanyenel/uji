@@ -185,6 +185,41 @@ it("runs every tool under a default of allow except what a rule denies", functio
     assert.same({ deny = "denied by policy" }, app.agent:approve("run_command", { command = "rm -rf build" }))
 end)
 
+it("lets a rule be a function of the subject", function()
+    uji.tool.policy({
+        default = "allow",
+        run_command = {
+            deny = {
+                function(command)
+                    return command:find("rm -rf", 1, true) ~= nil
+                end,
+                {
+                    pattern = function(command)
+                        return command:find("^curl") ~= nil
+                    end,
+                    message = "no network",
+                },
+            },
+        },
+    })
+    assert.same({ allow = true, arguments = { command = "ls" } }, app.agent:approve("run_command", { command = "ls" }))
+    assert.same({ deny = "denied by policy" }, app.agent:approve("run_command", { command = "rm -rf build" }))
+    assert.same({ deny = "no network" }, app.agent:approve("run_command", { command = "curl x" }))
+end)
+
+it("asks before a tool when a rule function raises", function()
+    local said = nil
+    uji.on("notice", function(notice)
+        said = notice.text
+    end)
+    local broken = function()
+        error("no idea", 0)
+    end
+    uji.tool.policy({ default = "allow", run_command = { deny = { broken } } })
+    assert.same({ ask = true }, app.agent:verdict("run_command", nil, { command = "ls" }, "ls"))
+    assert.equal("run_command policy: no idea", said)
+end)
+
 it("checks the policy against the file a * matches", { timeout = 20 }, function()
     sandbox.file("secret.env", "x")
     uji.tool.policy({ read_file = { deny = { "*.env" } } })

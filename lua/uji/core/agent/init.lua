@@ -362,7 +362,13 @@ function Agent:verdict(name, entry, args, subject)
     if entry and entry.path then
         subjects[2] = Files(self.session.directory):resolve(subject)
     end
-    local action, message = tool.compiled():evaluate(name, subjects, entry and entry.policy)
+    local policy = tool.compiled()
+    local action, message
+    ok, action, message = pcall(policy.evaluate, policy, name, subjects, entry and entry.policy)
+    if not ok then
+        notices.push(name .. " policy: " .. sys.message(action))
+        return { ask = true }
+    end
     if action == "allow" then
         return { allow = true }
     elseif action == "deny" then

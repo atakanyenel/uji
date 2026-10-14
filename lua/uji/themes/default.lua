@@ -1,3 +1,4 @@
+local Any = require("uji.utils.any")
 local ito = require("ito")
 local tables = require("uji.core.tables")
 
@@ -215,7 +216,7 @@ local LIMITS = {
 return function(changes)
     changes = changes or {}
     local colors = tables.merged(COLORS, changes.colors)
-    local extra = type(changes.styles) == "function" and changes.styles(colors) or changes.styles
+    local extra = Any(changes.styles):call(colors)
     return {
         name = changes.name or "default",
         colors = colors,

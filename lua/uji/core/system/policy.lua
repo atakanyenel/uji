@@ -1,6 +1,6 @@
+local Any = require("uji.utils.any")
 local class = require("uji.core.class")
 local list = require("uji.utils.list")
-local sys = require("uji.sys")
 local tables = require("uji.core.tables")
 
 local ACTIONS = { allow = true, ask = true, deny = true }
@@ -18,32 +18,11 @@ local function strictest(left, right)
     return left
 end
 
-local function matcher(value)
-    if #value >= 2 and value:sub(1, 1) == "/" and value:sub(-1) == "/" then
-        return sys.regex(value:sub(2, -2))
-    end
-    if value:find("[%*%?%[]") then
-        return sys.glob(value)
-    end
-    return {
-        test = function(_, subject)
-            return subject == value
-        end,
-    }
-end
-
 local function rule(entry, action)
-    local pattern = type(entry) == "table" and entry.pattern or entry
-    local found = type(pattern) == "string" and matcher(pattern)
-    if not found then
-        return nil
+    local any = Any(entry)
+    if any:valid() then
+        return { match = any, action = action }
     end
-    local matchers = { found }
-    local expanded = sys.os.expand(pattern)
-    if expanded ~= pattern then
-        matchers[2] = matcher(expanded)
-    end
-    return { matchers = matchers, action = action, message = type(entry) == "table" and entry.message or nil }
 end
 
 local function top_default(value, notices)
@@ -60,11 +39,9 @@ end
 
 local function matched(rules, subjects)
     for _, candidate in ipairs(rules) do
-        for _, found in ipairs(candidate.matchers) do
-            for _, subject in ipairs(subjects) do
-                if found:test(subject) then
-                    return candidate
-                end
+        for _, subject in ipairs(subjects) do
+            if candidate.match:handle(subject) then
+                return candidate
             end
         end
     end
@@ -161,7 +138,7 @@ function Policy:evaluate(tool, subjects, declared)
     local entry = self.tools[tool] or NONE
     local found = matched(entry.rules, subjects)
     if found then
-        return found.action, found.message
+        return found.action, found.match.message
     end
     return entry.default or self.default or declared or "ask"
 end
