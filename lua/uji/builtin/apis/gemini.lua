@@ -4,6 +4,7 @@ local stream = require("uji.builtin.apis.stream")
 local MAX_TOKENS = "MAX_TOKENS"
 local RANK = { minimal = 1, low = 2, medium = 3, high = 4, xhigh = 5, max = 6 }
 local LEVELS = {
+    ["gemini-4-argon"] = { "low", "medium", "high" },
     ["gemini-3.8-flash"] = { "low", "medium", "high" },
     ["gemini-3.7-flash"] = { "low", "medium", "high" },
     ["gemini-3.6-flash"] = { "minimal", "low", "medium", "high" },

@@ -109,6 +109,8 @@ uji.provider.add({
         "google/gemini-3.7-flash:batch",
         { id = "google/gemini-3.8-flash", context = 1048576, output = 65536, reasoning = true, images = true },
         "google/gemini-3.8-flash:batch",
+        { id = "google/gemini-4-argon", context = 1048576, output = 65536, reasoning = true, images = true },
+        "google/gemini-4-argon:batch",
         { id = "google/gemma-3-12b-it", context = 131072, output = 16384, images = true },
         { id = "google/gemma-3-27b-it", context = 131072, output = 117964, images = true },
         { id = "google/gemma-4-26b-a4b-it", context = 262144, output = 235929, reasoning = true, images = true },

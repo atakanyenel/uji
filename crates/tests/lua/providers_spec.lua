@@ -97,6 +97,11 @@ it("resolves the current model again once its provider has loaded", function()
     assert.same({ "low", "high" }, uji.model.efforts())
 end)
 
+it("offers gemini 4 argon the thinking levels it was released with", function()
+    uji.model.use({ provider = "google", model = "gemini-4-argon" })
+    assert.same({ "low", "medium", "high" }, uji.model.efforts())
+end)
+
 it("rejects models that are neither a list nor a function", function()
     local ok, err = pcall(add, "broken", "not a list")
     assert.is_false(ok)

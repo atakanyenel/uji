@@ -1,3 +1,4 @@
+local Any = require("uji.utils.any")
 local Policy = require("uji.core.system.policy")
 local Registry = require("uji.core.registry")
 local check = require("uji.core.check")
@@ -138,10 +139,7 @@ function M.detail(tool, args)
     if tool == nil or tool.subject == nil then
         return nil
     end
-    if type(tool.subject) == "string" then
-        return tool.subject
-    end
-    return tool.subject(args)
+    return Any(tool.subject):call(args)
 end
 
 function M.subject(tool, name, args)

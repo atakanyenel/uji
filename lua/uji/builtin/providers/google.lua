@@ -5,6 +5,7 @@ uji.provider.add({
     base_url = "https://generativelanguage.googleapis.com/v1beta",
     auth_env = { "GEMINI_API_KEY", "GOOGLE_API_KEY" },
     models = {
+        { id = "gemini-4-argon", context = 1048576, output = 32768, reasoning = true, images = true },
         { id = "gemini-3.1-pro-preview", context = 1048576, output = 65536, reasoning = true, images = true },
         { id = "deep-research-max-preview-04-2026", context = 131072, output = 65536, reasoning = true, images = true },
         { id = "deep-research-preview-04-2026", context = 131072, output = 65536, reasoning = true, images = true },
