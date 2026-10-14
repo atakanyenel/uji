@@ -63,6 +63,7 @@
   - [Modifiers](ito/modifiers.md)
   - [State](ito/state.md)
   - [Controls](ito/controls.md)
+  - [Images](ito/images.md)
   - [Toolbars](ito/toolbars.md)
   - [Window](ito/window.md)
   - [Terminal](ito/terminal.md)

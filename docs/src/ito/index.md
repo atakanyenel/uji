@@ -44,4 +44,5 @@ on the bar adds the seconds.
 | [State](state.md) | Values a view keeps between frames, values it hands to the views inside it, and the theme. |
 | [Toolbars](toolbars.md) | Items a plugin puts in a section of the screen, and the sections that show them. |
 | [Controls](controls.md) | A text field, a list, a scrolling view and a spinner, and which of them gets the keys. |
+| [Images](images.md) | A picture in a view, and the viewer that zooms and pans it. |
 | [Terminal](terminal.md) | The screen and the input uji draws on. |

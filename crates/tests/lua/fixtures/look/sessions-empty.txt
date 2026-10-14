@@ -1,23 +1,23 @@
  0|┌ Sessions in /work/project ───────────────────────────────────────────────────┐
   |0+80 fg=Cyan
  1|│TITLE                     UPDATED         ID                                  │
-  |0+1 fg=Cyan; 1+5 fg=#808080 bold; 6+21 fg=Cyan; 27+7 fg=#808080 bold; 34+9 fg=Cyan; 43+2 fg=#808080 bold; 45+35 fg=Cyan
+  |0+1 fg=Cyan; 1+5 fg=#808080 bold; 27+7 fg=#808080 bold; 43+2 fg=#808080 bold; 79+1 fg=Cyan
  2|│No sessions in current directory                                              │
-  |0+1 fg=Cyan; 1+32 fg=#808080; 33+47 fg=Cyan
+  |0+1 fg=Cyan; 1+32 fg=#808080; 79+1 fg=Cyan
  3|│                                                                              │
-  |0+80 fg=Cyan
+  |0+1 fg=Cyan; 79+1 fg=Cyan
  4|│                                                                              │
-  |0+80 fg=Cyan
+  |0+1 fg=Cyan; 79+1 fg=Cyan
  5|│                                                                              │
-  |0+80 fg=Cyan
+  |0+1 fg=Cyan; 79+1 fg=Cyan
  6|│                                                                              │
-  |0+80 fg=Cyan
+  |0+1 fg=Cyan; 79+1 fg=Cyan
  7|│                                                                              │
-  |0+80 fg=Cyan
+  |0+1 fg=Cyan; 79+1 fg=Cyan
  8|│                                                                              │
-  |0+80 fg=Cyan
+  |0+1 fg=Cyan; 79+1 fg=Cyan
  9|│                                                                              │
-  |0+80 fg=Cyan
+  |0+1 fg=Cyan; 79+1 fg=Cyan
 10|└──────────────────────────────────────────────────────────────────────────────┘
   |0+80 fg=Cyan
 11|esc quit
