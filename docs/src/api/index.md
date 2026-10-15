@@ -1,6 +1,6 @@
 # Available APIs
 
-Every function lives under the global `uji` table. A function that finishes later takes a callback as its last argument, which receives the result, or `nil` and an error message. Called without the callback from a slash command, a key binding or a timer, it waits and returns the result instead. A function that starts background work returns a function that stops it. Wrong arguments raise an error at the call.
+Every function lives under the global `uji` table. A function that finishes later takes a callback as its last argument, which receives the result, or `nil` and an error message. Called without the callback from a slash command, a key binding, a timer or a click handler, it waits and returns the result instead. A function that starts background work returns a function that stops it. Wrong arguments raise an error at the call.
 
 ## Tools
 
@@ -140,6 +140,7 @@ Every function lives under the global `uji` table. A function that finishes late
 | [`uji.job.start(opts)`](job.md#ujijobstartopts) | Starts a process and returns a job table. |
 | [`uji.jobs.list()`](jobs.md#ujijobslist) | Returns the background jobs. |
 | [`uji.jobs.stop(id)`](jobs.md#ujijobsstopid) | Stops a running background job. |
+| [`uji.jobs.pick()`](jobs.md#ujijobspick) | Shows the jobs, running ones first, and stops the one you pick. |
 | [`uji.jobs.configure(opts)`](jobs.md#ujijobsconfigureopts) | Sets whether a finished job wakes the model, how many jobs run at once, and how long they may run. |
 
 ## HTTP

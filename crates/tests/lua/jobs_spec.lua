@@ -2,6 +2,7 @@ local agent = require("support.agent")
 local app = require("uji.core.app")
 local jobs = require("uji.core.jobs")
 local keys = require("uji.core.ui.keys")
+local list = require("uji.utils.list")
 local sandbox = require("support.sandbox")
 local screen = require("support.ui")
 local server = require("support.server")
@@ -162,6 +163,28 @@ it("names jobs in the theme's words and reports a stopped one in the chat", { si
     end)
     ui:take_notices()
     assert.is_nil(ui.flashed, "a stopped job joins the chat, not the notices")
+end)
+
+it("shows the running jobs first, then the newest", { timeout = 10 }, function()
+    uji.jobs.configure({ wake = false })
+    local asked
+    uji.ui.pick = function(opts)
+        asked = opts
+    end
+    jobs.start({ command = "echo one", background = true })
+    jobs.start({ command = "echo two", background = true })
+    jobs.start({ command = "sleep 5", background = true })
+    eventually(function()
+        local listed = uji.jobs.list()
+        return listed[1].state == "finished" and listed[2].state == "finished" and listed[3].state == "running"
+    end)
+    require("uji.core.command").run("jobs")
+    assert.same(
+        { 3, 2, 1 },
+        list.mapped(asked.items, function(job)
+            return job.id
+        end)
+    )
 end)
 
 it("waits for your next message when waking is off", { timeout = 10 }, function()

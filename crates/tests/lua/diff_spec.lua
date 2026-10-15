@@ -39,6 +39,7 @@ local function click(label)
     local row = screen.find(label)
     ui:mouse({ kind = "down", button = "left", row = row, col = 6 })
     ui:mouse({ kind = "up", button = "left", row = row, col = 6 })
+    screen.pump()
 end
 
 local function calls(list)

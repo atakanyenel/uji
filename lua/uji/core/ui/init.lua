@@ -562,10 +562,13 @@ function Ui:mouse(incoming)
     elseif incoming.button == "left" and kind == "drag" then
         window:drag(incoming.row, incoming.col)
     elseif incoming.button == "left" and kind == "up" then
-        local copied = window:release(incoming)
-        if copied then
-            self:copy(copied)
-        end
+        task.spawn(function()
+            local copied = window:release(incoming)
+            if copied then
+                self:copy(copied)
+            end
+            self:invalidate()
+        end)
     else
         return
     end
