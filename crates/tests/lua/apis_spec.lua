@@ -161,7 +161,7 @@ end
 
 local function openai_cases()
     local out = {}
-    for _, provider in ipairs({ "custom", "deepseek", "zhipuai", "openrouter", "moonshotai", "mistral" }) do
+    for _, provider in ipairs({ "custom", "deepseek", "zai", "openrouter", "moonshotai", "mistral" }) do
         for _, effort in ipairs(EFFORTS) do
             for _, at in ipairs({ 0, 2, 3 }) do
                 out[#out + 1] = base(provider, "m", "oa-text", { effort = effort, messages = history(at) })
