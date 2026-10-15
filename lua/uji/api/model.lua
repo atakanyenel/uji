@@ -93,6 +93,6 @@ uji.model = {
     use = use,
     decide = decide,
     efforts = function()
-        return { unpack(model.current.efforts) }
+        return { table.unpack(model.current.efforts) }
     end,
 }

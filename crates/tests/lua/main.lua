@@ -72,7 +72,7 @@ local function start(args)
         repo = assert(fs.realpath(dir .. "/../../..")),
         root = string.format("%s/uji-test-%d", tmp, system.now()),
         bin = assert(system.executable, "uji-test does not know where it is"),
-        filters = { unpack(args, 4) },
+        filters = { table.unpack(args, 4) },
         made = 0,
     }, Run)
     assert(fs.mkdir(run.root))

@@ -29,7 +29,7 @@ function M.resolve(args)
         return nil, "error: no file matches " .. value
     end
     if #found > 1 then
-        local shown = table.concat({ unpack(found, 1, LISTED) }, "\n")
+        local shown = table.concat({ table.unpack(found, 1, LISTED) }, "\n")
         local more = #found > LISTED and string.format("\nand %d more", #found - LISTED) or ""
         return nil, string.format("error: %s matches %d files; name one of them:\n%s%s", value, #found, shown, more)
     end

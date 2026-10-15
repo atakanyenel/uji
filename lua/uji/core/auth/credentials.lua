@@ -1,15 +1,20 @@
 local class = require("uji.core.class")
+local dotenv = require("uji.core.auth.dotenv")
+local notices = require("uji.core.notices")
 local sys = require("uji.sys")
 
 local SERVICE = "uji"
 local FILE = "auth.toml"
 local PRIVATE = tonumber("600", 8)
 
+local reported = {}
+
 local Credentials = class()
 
 function Credentials:init(directory)
     self.directory = directory
     self.keychain = false
+    self.auth_file = nil
 end
 
 local function entry(value)
@@ -113,17 +118,74 @@ function Credentials:remove(provider)
     return in_keychain or in_file
 end
 
-function Credentials.env_key(names)
-    for _, name in ipairs(names or {}) do
-        local value = sys.os.env(name)
-        if value then
+local function alert(path, err)
+    if not reported[path] then
+        reported[path] = true
+        notices.push("auth file " .. path .. ": " .. err)
+    end
+end
+
+local function contents(path, quiet)
+    if quiet and not sys.fs.stat(path) then
+        return nil
+    end
+    local text, err = sys.fs.read(path)
+    if not text then
+        alert(path, tostring(err))
+        return nil
+    end
+    local value = (text:gsub("^%s+", ""):gsub("%s+$", ""))
+    if value ~= "" then
+        return value
+    end
+end
+
+function Credentials:auth_values()
+    local path = dotenv.path(self.auth_file)
+    local values, err = dotenv.values(path)
+    if not values then
+        alert(path, err)
+        return nil
+    end
+    return values
+end
+
+local SUFFIX = "_FILE"
+
+local function pointed(name)
+    local path = sys.os.env(name .. SUFFIX)
+    if path and path ~= "" then
+        return contents(sys.os.expand(path))
+    end
+end
+
+function Credentials:env_key(provider)
+    local names = provider.auth_env
+    if not names or #names == 0 then
+        return nil
+    end
+    for _, name in ipairs(names) do
+        local found = sys.os.env(name) or pointed(name)
+        if found then
+            return found
+        end
+    end
+    local path = provider.auth_file
+    local named = path and path ~= "" and contents(sys.os.expand(path), true)
+    if named then
+        return named
+    end
+    local values = self:auth_values()
+    for _, name in ipairs(names) do
+        local value = values and values[name]
+        if value and value ~= "" then
             return value
         end
     end
 end
 
 function Credentials:authenticated(provider)
-    return self:get(provider.id) ~= nil or Credentials.env_key(provider.auth_env) ~= nil
+    return self:get(provider.id) ~= nil or self:env_key(provider) ~= nil
 end
 
 return Credentials

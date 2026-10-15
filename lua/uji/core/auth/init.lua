@@ -6,12 +6,15 @@ local oauth = require("uji.core.auth.oauth")
 local paths = require("uji.core.paths")
 local process = require("uji.core.system.process")
 
+local OPTIONS = { keychain = "boolean", file = "string" }
+
 local M = { options = { keychain = false } }
 
 function M.credentials()
     if not M.store then
         M.store = Credentials(paths.data())
         M.store.keychain = M.options.keychain
+        M.store.auth_file = M.options.file
     end
     return M.store
 end
@@ -19,16 +22,18 @@ end
 function M.configure(opts)
     check.options(opts, "uji.auth.configure")
     for key, value in pairs(opts) do
-        if key ~= "keychain" then
+        local wanted = OPTIONS[key]
+        if not wanted then
             error("unknown key " .. tostring(key), 2)
         end
-        if type(value) ~= "boolean" then
-            error("keychain must be a boolean", 2)
+        if type(value) ~= wanted then
+            error(key .. " must be a " .. wanted, 2)
         end
-        M.options.keychain = value
+        M.options[key] = value
     end
     if M.store then
         M.store.keychain = M.options.keychain
+        M.store.auth_file = M.options.file
     end
 end
 
@@ -59,7 +64,7 @@ end
 function M.resolve(provider)
     local credentials = M.credentials()
     local stored = credentials:get(provider.id)
-    local key = stored and stored.type == "api_key" and stored.key or Credentials.env_key(provider.auth_env)
+    local key = stored and stored.type == "api_key" and stored.key or credentials:env_key(provider)
     local session
     if provider.oauth and stored and stored.type == "oauth" then
         local ok, credential = pcall(session_credential, provider, stored)

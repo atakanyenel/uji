@@ -5,11 +5,13 @@ providers that offer a subscription.
 
 ## uji.auth.configure(opts)
 
-Chooses where uji keeps API keys and subscription sign-ins.
+Chooses where uji keeps API keys and subscription sign-ins, and which
+[auth file](#the-auth-file) it reads.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `keychain` | boolean | With `true`, uji saves credentials in the system keychain and looks there first. The default is `false`. |
+| `file` | string | The auth file to read. The default is `auth.env` in the config directory, and `UJI_AUTH_FILE` wins over this. |
 
 Without the keychain, uji keeps credentials in `auth.toml` in the
 [data directory](../configuration/files.md), readable only by you. Each
@@ -18,7 +20,29 @@ string, which uji reads as an API key. A keychain that refuses a save sends
 the credential to `auth.toml` as well.
 
 Raises an error for an unknown field, and for a `keychain` that is not a
-boolean.
+boolean or a `file` that is not a string.
+
+## The auth file
+
+One dotenv file can hold the keys for every provider. For each name in a
+provider's [`auth_env`](provider.md#ujiprovideraddspec), uji reads it after the
+environment, the file `<name>_FILE` names, and the provider's
+[`auth_file`](provider.md#ujiprovideraddspec); a credential you saved with
+`/login` wins over all of them. Both of those files hold the key alone.
+
+The file is `auth.env` in the [config directory](../configuration/files.md),
+unless `uji.auth.configure({ file = … })` or `UJI_AUTH_FILE` names another. A
+path may start with `~`. Lines are `NAME=value`:
+
+```text
+# comments start with a hash
+TYPESAFE_API_KEY=sk-…
+OPENROUTER_API_KEY="sk-or-v1-…"
+```
+
+`export ` before a name, one pair of quotes around a value, and a `#` comment
+after an unquoted value are all understood. There are no escapes and no
+variable expansion.
 
 ## uji.auth.authenticated(id)
 

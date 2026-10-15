@@ -14,7 +14,8 @@ Adds a provider, or merges `spec` into the provider with the same `id`.
 | `api` | object | The API the provider speaks, such as `uji.api.openai()`. [Provider APIs](apis.md) lists the built-in ones and how to change them. Required for a new provider. |
 | `loop` | class | Runs the turn instead of uji's own loop, for a provider that runs the model and the tools itself, such as a coding agent CLI. See [Your own loop](#your-own-loop). |
 | `base_url` | string | The API root, such as `"https://api.openai.com/v1"`. Required for a new provider without a `loop`. |
-| `auth_env` | list of strings | Environment variables that may hold the API key. |
+| `auth_env` | list of strings | Environment variables that may hold the API key. uji also reads the file `<name>_FILE` names, and the [auth file](auth.md#the-auth-file). |
+| `auth_file` | string | A file that holds the API key alone, read when the names give nothing. |
 | `models` | list or function | Model ids, or tables with `id`, `context`, `output`, `reasoning`, `cache`, `images` and `efforts`. `images` is `true` or `false` when you know whether the model takes images. `efforts` lists the reasoning efforts the model accepts, from `off`, `minimal`, `low`, `medium`, `high`, `xhigh` and `max`. Without it, uji asks the provider's `api`. A function returns that list, and uji calls it once, the first time it needs the provider's models. The function may wait, for example on `uji.http.request`. |
 | `context_window` | integer | The context size to assume for a model that does not set one. |
 | `oauth` | table | Subscription sign-in settings. The built-in Anthropic and OpenAI providers show the format. |
@@ -121,7 +122,7 @@ uji.provider.remove("perplexity")
 ## uji.provider.list()
 
 Returns one table per provider with `id`, `name`, `api`, `base_url`,
-`auth_env`, `context_window`, `models`, `oauth`, which is `true` when the
+`auth_env`, `auth_file`, `context_window`, `models`, `oauth`, which is `true` when the
 provider offers subscription sign-in, `device_auth`, which is `true` when its
 `oauth.device` settings support device code sign-in, `loop`, which is `true` when the provider
 runs its own agent loop, `state` and `error`. Each model has `id`,

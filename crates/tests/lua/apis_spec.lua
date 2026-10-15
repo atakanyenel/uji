@@ -624,7 +624,7 @@ local function observed(incoming)
         headers[name] = incoming.headers[name]
     end
     local seen = json.canonical({
-        path = "/" .. table.concat({ unpack(parts, 5) }, "/"),
+        path = "/" .. table.concat({ table.unpack(parts, 5) }, "/"),
         headers = headers,
         body = incoming.body,
     })

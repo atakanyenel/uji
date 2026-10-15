@@ -149,7 +149,7 @@ describe("views for plugins", function()
             return nil
         end)
         local after = screen.rows(true)
-        assert.same({ unpack(before, 1, 10) }, { unpack(after, 1, 10) })
+        assert.same({ table.unpack(before, 1, 10) }, { table.unpack(after, 1, 10) })
     end)
 
     it("lets a theme restyle a plugin's view", { size = { 30, 6 } }, function()

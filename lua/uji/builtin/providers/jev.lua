@@ -4,5 +4,6 @@ uji.provider.add({
     api = uji.api.jev(),
     base_url = "https://api.typesafe.ai/v1",
     auth_env = { "TYPESAFE_API_KEY" },
+    auth_file = "~/.config/typesafe/api_key",
     models = {},
 })

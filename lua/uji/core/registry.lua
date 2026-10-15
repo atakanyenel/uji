@@ -103,7 +103,7 @@ end
 
 function Registry:each()
     local index = 0
-    local entries = { unpack(self.entries) }
+    local entries = { table.unpack(self.entries) }
     return function()
         index = index + 1
         local entry = entries[index]

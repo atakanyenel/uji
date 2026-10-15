@@ -25,7 +25,7 @@ package.path = table.concat({
 package.loaded["support.params"] = params
 
 local function joined(names, name)
-    local out = { unpack(names) }
+    local out = { table.unpack(names) }
     out[#out + 1] = name
     return out
 end

@@ -21,7 +21,7 @@ local function numbered(lines, from)
 end
 
 local function slice(list, from, to)
-    return { unpack(list, from, to) }
+    return { table.unpack(list, from, to) }
 end
 
 local function round_trip(calls)
@@ -165,7 +165,7 @@ it("reports output, exit codes and timeouts from run_command", { timeout = 20 },
         { "run_command", '{"command": ""}' },
     })
     assert.equal(8, #results)
-    local both, partial, quiet, failed, long, pwd, slow, empty = unpack(results)
+    local both, partial, quiet, failed, long, pwd, slow, empty = table.unpack(results)
     assert.equal("hi\nerr", both)
     assert.equal("partial\n(exit code 3)", partial)
     assert.equal("(no output, exit code 0)", quiet)

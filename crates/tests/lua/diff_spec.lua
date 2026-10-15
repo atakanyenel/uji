@@ -91,7 +91,7 @@ it("keeps a diff for edits and overwrites and a summary for reads and new files 
         { "write_file", sys.json.encode({ path = "new.txt", content = "a\nb\n" }) },
         { "write_file", sys.json.encode({ path = "greet.py", content = GREET }) },
     })
-    local edit, read, created, overwrote = unpack(stored())
+    local edit, read, created, overwrote = table.unpack(stored())
     assert.equal("edited greet.py at line 3", edit.content)
     assert.same(shape(uji.diff(GREET, HI, "greet.py")), shape(edit.diff))
     assert.equal("Read 5 lines", read.summary)
