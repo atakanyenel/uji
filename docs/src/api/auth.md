@@ -5,11 +5,13 @@ providers that offer a subscription.
 
 ## uji.auth.configure(opts)
 
-Chooses where uji keeps API keys and subscription sign-ins.
+Chooses where uji keeps API keys and subscription sign-ins, and which
+[auth file](#the-auth-file) it reads.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `keychain` | boolean | With `true`, uji saves credentials in the system keychain and looks there first. The default is `false`. |
+| `file` | string | The auth file to read. The default is `auth.env` in the config directory, and `UJI_AUTH_FILE` wins over this. |
 
 Without the keychain, uji keeps credentials in `auth.toml` in the
 [data directory](../configuration/files.md), readable only by you. Each
@@ -18,7 +20,41 @@ string, which uji reads as an API key. A keychain that refuses a save sends
 the credential to `auth.toml` as well.
 
 Raises an error for an unknown field, and for a `keychain` that is not a
-boolean.
+boolean or a `file` that is not a string.
+
+## The auth file
+
+For each name in a provider's [`auth_env`](provider.md#ujiprovideraddspec), uji
+takes the first of these that is set:
+
+| Where | Example |
+|---|---|
+| The environment | `TYPESAFE_API_KEY=sk-…` |
+| A file that name points at | `TYPESAFE_API_KEY_FILE=~/.config/typesafe/api_key`, holding the key alone |
+| The provider's own file | `auth_file = "~/.config/typesafe/api_key"` in [`uji.provider.add`](provider.md#ujiprovideraddspec), holding the key alone |
+| The auth file | `TYPESAFE_API_KEY=sk-…`, one file for every provider |
+
+A credential you saved with `/login` wins over all four. A `NAME_FILE` that is
+missing or empty is reported once and left out, a provider's `auth_file` that is
+not there is left out quietly, and a provider whose `auth_env` names nothing is
+not looked up.
+
+uji reads `auth.env` in the [config directory](../configuration/files.md) when
+it is there. `uji.auth.configure({ file = … })` picks another, and
+`UJI_AUTH_FILE` picks one for a run; a path may start with `~`, which means your
+home directory. Lines are `NAME=value`:
+
+```text
+# comments start with a hash
+TYPESAFE_API_KEY=sk-…
+OPENROUTER_API_KEY="sk-or-v1-…"
+export ANTHROPIC_API_KEY='sk-ant-…'
+```
+
+`export ` at the start of a line, spaces around `=`, one pair of quotes around
+the value, and a `#` comment after an unquoted value are all understood. There
+are no escapes and no variable expansion. A line that is neither a comment nor
+`NAME=value` is reported once, and the file is left out.
 
 ## uji.auth.authenticated(id)
 

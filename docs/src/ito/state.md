@@ -116,7 +116,7 @@ function Queue.new()
 end
 
 function Queue:push(item)
-  local items = { unpack(self.items) }
+  local items = { table.unpack(self.items) }
   items[#items + 1] = item
   self.items = items
 end

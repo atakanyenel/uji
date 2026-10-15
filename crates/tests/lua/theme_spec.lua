@@ -173,7 +173,7 @@ end
 local TRANSCRIPT_ROW = 4
 
 local function transcript_rows()
-    return { unpack(screen.rows(true), TRANSCRIPT_ROW) }
+    return { table.unpack(screen.rows(true), TRANSCRIPT_ROW) }
 end
 
 local function theme_file(name, source)

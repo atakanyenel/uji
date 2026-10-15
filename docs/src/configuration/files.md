@@ -8,6 +8,7 @@
 | Installed packs | `site/` in the data directory | |
 | Pack versions | `uji-lock.json` in the config directory | |
 | Credentials | `auth.toml` in the data directory | [`uji.auth.configure`](../api/auth.md) |
+| Auth file | `auth.env` in the config directory | [`uji.auth.configure`](../api/auth.md#the-auth-file) or `UJI_AUTH_FILE` |
 | Diagnostics | `diagnostics.log` in the data directory | |
 
 An option on the command line wins over the `UJI_` variable, which wins over

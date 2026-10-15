@@ -10,7 +10,7 @@ local function model_row(entry)
         reasoning = entry.reasoning,
         cache = entry.cache,
         images = entry.images,
-        efforts = entry.efforts and { unpack(entry.efforts) },
+        efforts = entry.efforts and { table.unpack(entry.efforts) },
     }
 end
 
@@ -24,7 +24,8 @@ local function provider_row(provider)
         name = provider.name,
         api = provider.api,
         base_url = provider.base_url,
-        auth_env = { unpack(provider.auth_env) },
+        auth_env = { table.unpack(provider.auth_env) },
+        auth_file = provider.auth_file,
         oauth = provider.oauth ~= nil,
         device_auth = provider.oauth ~= nil and provider.oauth.device ~= nil,
         loop = provider.loop ~= nil,

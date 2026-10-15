@@ -104,7 +104,7 @@ function M.run()
     if not config then
         return nil, "$HOME is not set"
     end
-    local skills = sys.fs.join(config, unpack(SKILLS))
+    local skills = sys.fs.join(config, table.unpack(SKILLS))
     local skill = sys.fs.join(skills, SKILL)
     local guide = sys.fs.join(skill, GUIDE)
     local values = {

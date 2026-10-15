@@ -15,6 +15,7 @@ local FIELDS = {
     loop = true,
     base_url = true,
     auth_env = true,
+    auth_file = true,
     oauth = true,
     context_window = true,
     models = true,
@@ -41,7 +42,7 @@ local function efforts(names, id)
             error("model " .. id .. " lists an unknown effort `" .. tostring(name) .. "`", 0)
         end
     end
-    return { unpack(names) }
+    return { table.unpack(names) }
 end
 
 local function model(spec)
@@ -174,7 +175,7 @@ function Provider:merge(specs)
 end
 
 function Provider:apply(patch)
-    for _, key in ipairs({ "name", "api", "loop", "base_url", "auth_env", "oauth", "context_window" }) do
+    for _, key in ipairs({ "name", "api", "loop", "base_url", "auth_env", "auth_file", "oauth", "context_window" }) do
         if patch[key] ~= nil then
             self[key] = patch[key]
         end
@@ -223,6 +224,7 @@ local function create(spec)
         loop = spec.loop,
         base_url = spec.base_url or "",
         auth_env = spec.auth_env or {},
+        auth_file = spec.auth_file,
         oauth = spec.oauth,
         context_window = spec.context_window,
         models = lazy and {} or models(spec.models),

@@ -83,7 +83,7 @@ function GENERATORS.random(_, spec)
 end
 
 function GENERATORS.bytes(_, spec)
-    return string.char(unpack(spec.bytes))
+    return string.char(table.unpack(spec.bytes))
 end
 
 function GENERATORS.value(ctx, spec)

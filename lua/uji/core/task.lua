@@ -3,15 +3,13 @@ local sys = require("uji.sys")
 
 local M = {}
 
-local unpack = table.unpack or unpack
-
 local function pack(...)
     return { n = select("#", ...), ... }
 end
 
 M.pack = pack
 M.unpack = function(values, from)
-    return unpack(values, from or 1, values.n)
+    return table.unpack(values, from or 1, values.n)
 end
 
 local contexts = setmetatable({}, { __mode = "k" })
@@ -42,7 +40,7 @@ end
 function M.schedule(fn, ...)
     local args = pack(...)
     local run = inherit(function()
-        fn(unpack(args, 1, args.n))
+        fn(table.unpack(args, 1, args.n))
     end)
     if M.held then
         M.held[#M.held + 1] = run
@@ -67,7 +65,7 @@ function M.defer(seconds, fn, ...)
     local args = pack(...)
     local task = sys.task.spawn(inherit(function()
         sys.sleep(seconds)
-        fn(unpack(args, 1, args.n))
+        fn(table.unpack(args, 1, args.n))
     end))
     return function()
         task:cancel()
@@ -85,12 +83,12 @@ local function settle(outcome)
     if not outcome[1] then
         error(outcome[2], 0)
     end
-    return unpack(outcome, 2, outcome.n)
+    return table.unpack(outcome, 2, outcome.n)
 end
 
 function M.race(...)
     local racers = list.mapped({ ... }, guarded)
-    local index, outcome = sys.task.race(unpack(racers))
+    local index, outcome = sys.task.race(table.unpack(racers))
     return index, settle(outcome)
 end
 
@@ -138,7 +136,7 @@ function M.callback(run)
         local args = pack(...)
         args.n = count - 1
         local task = sys.task.spawn(inherit(function()
-            last(run(unpack(args, 1, args.n)))
+            last(run(table.unpack(args, 1, args.n)))
         end))
         return function()
             task:cancel()

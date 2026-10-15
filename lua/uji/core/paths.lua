@@ -19,7 +19,7 @@ local function dir(own, xdg, fallback)
     end
     local home = sys.os.home()
     if home then
-        return sys.fs.join(home, unpack(fallback))
+        return sys.fs.join(home, table.unpack(fallback))
     end
 end
 
