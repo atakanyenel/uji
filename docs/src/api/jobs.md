@@ -46,6 +46,13 @@ Returns one table per background job, oldest first, with these fields:
 Stops a running job and returns `true`. Returns `false` when no job with that
 id is running.
 
+## uji.jobs.pick()
+
+Shows the jobs in a picker, running ones first with their latest output in the
+preview, and stops a running job you pick. `/jobs` runs this. Returns the job
+picked, or `nil` when there is nothing to pick, and notices when there are no
+jobs at all.
+
 ## uji.jobs.configure(opts)
 
 | Option | Meaning | Default |

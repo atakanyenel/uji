@@ -1,8 +1,13 @@
 local keys = require("uji.core.ui.keys")
+local sys = require("uji.sys")
 local text = require("ito").text
 local ui = require("uji.core.ui")
 
 local M = {}
+
+function M.pump()
+    sys.sleep(0)
+end
 
 function M.handle(chord)
     if ui.modal then
