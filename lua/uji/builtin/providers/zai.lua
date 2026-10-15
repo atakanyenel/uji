@@ -14,7 +14,7 @@ uji.provider.add({
     id = "zai",
     name = "Z.ai",
     api = Zai(),
-    base_url = "https://api.z.ai/api/paas/v4",
+    base_url = "https://api.z.ai/api/coding/paas/v4",
     auth_env = { "ZAI_API_KEY" },
     models = {
         { id = "glm-5.3", context = 1000000, output = 131072, reasoning = true, images = false },
