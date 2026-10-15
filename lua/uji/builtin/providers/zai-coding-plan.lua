@@ -10,9 +10,6 @@ function Zai:thinking(body, request)
     body.thinking = { type = request.effort == "off" and "disabled" or "enabled" }
 end
 
--- The GLM Coding Plan: the same z.ai key as the zai provider, served from its
--- own endpoint, which the subscription pays for. The pay-per-token endpoint
--- bills the account balance instead.
 uji.provider.add({
     id = "zai-coding-plan",
     name = "Z.ai Coding Plan",
