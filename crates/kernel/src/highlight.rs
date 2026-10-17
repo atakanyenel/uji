@@ -8,6 +8,8 @@ use uji_macros::{function, value};
 
 use crate::io::{self, Blocked};
 
+const NEWLINE: u8 = b'\n';
+
 static SYNTAXES: LazyLock<SyntaxSet> = LazyLock::new(two_face::syntax::extra_newlines);
 
 static KINDS: LazyLock<Vec<(Kind, ScopeSelectors)>> = LazyLock::new(|| {
@@ -93,21 +95,22 @@ fn line(parse: &mut ParseState, scopes: &mut ScopeStack, text: &str) -> Vec<Toke
     tokens
 }
 
+fn stripped(text: &str) -> &str {
+    text.strip_suffix('\r').unwrap_or(text)
+}
+
 fn highlighted(language: &str, text: &str) -> Option<Vec<Vec<Token>>> {
     let syntax = SYNTAXES.find_syntax_by_token(language)?;
     let mut parse = ParseState::new(syntax);
     let mut scopes = ScopeStack::new();
-    Some(
-        text.split('\n')
-            .map(|piece| {
-                line(
-                    &mut parse,
-                    &mut scopes,
-                    piece.strip_suffix('\r').unwrap_or(piece),
-                )
-            })
-            .collect(),
-    )
+    let mut lines = Vec::new();
+    let mut from = 0;
+    for at in memchr::memchr_iter(NEWLINE, text.as_bytes()) {
+        lines.push(line(&mut parse, &mut scopes, stripped(&text[from..at])));
+        from = at + 1;
+    }
+    lines.push(line(&mut parse, &mut scopes, stripped(&text[from..])));
+    Some(lines)
 }
 
 pub(crate) fn warm() {

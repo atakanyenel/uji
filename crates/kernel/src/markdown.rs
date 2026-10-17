@@ -112,9 +112,8 @@ fn code(source: &str) -> Vec<Range<usize>> {
 }
 
 fn find(text: &str, needle: &str, from: usize, code: &[Range<usize>]) -> Option<usize> {
-    text[from..]
-        .match_indices(needle)
-        .map(|(at, _)| from + at)
+    memchr::memmem::find_iter(&text.as_bytes()[from..], needle.as_bytes())
+        .map(|at| from + at)
         .find(|&at| !text[..at].ends_with('\\') && !code.iter().any(|range| range.contains(&at)))
 }
 

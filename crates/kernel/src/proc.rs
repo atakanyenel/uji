@@ -96,21 +96,27 @@ async fn pipe(reader: impl AsyncRead + Unpin, stream: Stream, lines: mpsc::Unbou
     let mut reader = BufReader::new(reader);
     let mut buffer = Vec::new();
     loop {
+        let Ok(available) = reader.fill_buf().await else {
+            return;
+        };
+        let len = available.len();
+        let ended = memchr::memchr(NEWLINE, available);
+        buffer.extend_from_slice(ended.map_or(available, |at| &available[..at]));
+        let consumed = ended.map_or(len, |at| at + 1);
+        reader.consume(consumed);
+        if ended.is_none() && len > 0 {
+            continue;
+        }
+        if buffer.is_empty() && ended.is_none() {
+            return;
+        }
+        if buffer.last() == Some(&RETURN) {
+            buffer.pop();
+        }
+        let text = String::from_utf8_lossy(&buffer).into_owned();
         buffer.clear();
-        match reader.read_until(NEWLINE, &mut buffer).await {
-            Ok(0) | Err(_) => return,
-            Ok(_) => {
-                if buffer.last() == Some(&NEWLINE) {
-                    buffer.pop();
-                }
-                if buffer.last() == Some(&RETURN) {
-                    buffer.pop();
-                }
-                let text = String::from_utf8_lossy(&buffer).into_owned();
-                if lines.send(Line { stream, text }).is_err() {
-                    return;
-                }
-            }
+        if lines.send(Line { stream, text }).is_err() || len == 0 {
+            return;
         }
     }
 }

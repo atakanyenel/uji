@@ -1523,7 +1523,7 @@ dependencies = [
 [[package]]
 name = "ito"
 version = "0.1.5"
-source = "git+https://github.com/uji-labs/ito?branch=main#08c6a5ac8bdf72f3595db17cf2c32a10edca3f9f"
+source = "git+https://github.com/uji-labs/ito?branch=main#e6f96b8dfdc8ef5f52bd1c934d944bced33dba8c"
 dependencies = [
  "base64 0.22.1",
  "crossterm",
@@ -2588,7 +2588,7 @@ dependencies = [
 [[package]]
 name = "ratatui"
 version = "0.30.2"
-source = "git+https://github.com/ratatui/ratatui?branch=main#d1ef782b48ddf0cb825c111d4d8b9adef572c0e1"
+source = "git+https://github.com/ratatui/ratatui?branch=main#0297560d8d77871c0281a39182e4e650856e2ffd"
 dependencies = [
  "instability",
  "ratatui-core",
@@ -2603,7 +2603,7 @@ dependencies = [
 [[package]]
 name = "ratatui-core"
 version = "0.1.2"
-source = "git+https://github.com/ratatui/ratatui?branch=main#d1ef782b48ddf0cb825c111d4d8b9adef572c0e1"
+source = "git+https://github.com/ratatui/ratatui?branch=main#0297560d8d77871c0281a39182e4e650856e2ffd"
 dependencies = [
  "bitflags 2.13.2",
  "compact_str",
@@ -2624,7 +2624,7 @@ dependencies = [
 [[package]]
 name = "ratatui-crossterm"
 version = "0.1.2"
-source = "git+https://github.com/ratatui/ratatui?branch=main#d1ef782b48ddf0cb825c111d4d8b9adef572c0e1"
+source = "git+https://github.com/ratatui/ratatui?branch=main#0297560d8d77871c0281a39182e4e650856e2ffd"
 dependencies = [
  "cfg-if",
  "crossterm",
@@ -2635,7 +2635,7 @@ dependencies = [
 [[package]]
 name = "ratatui-macros"
 version = "0.7.2"
-source = "git+https://github.com/ratatui/ratatui?branch=main#d1ef782b48ddf0cb825c111d4d8b9adef572c0e1"
+source = "git+https://github.com/ratatui/ratatui?branch=main#0297560d8d77871c0281a39182e4e650856e2ffd"
 dependencies = [
  "ratatui-core",
  "ratatui-widgets",
@@ -2644,7 +2644,7 @@ dependencies = [
 [[package]]
 name = "ratatui-termina"
 version = "0.1.0"
-source = "git+https://github.com/ratatui/ratatui?branch=main#d1ef782b48ddf0cb825c111d4d8b9adef572c0e1"
+source = "git+https://github.com/ratatui/ratatui?branch=main#0297560d8d77871c0281a39182e4e650856e2ffd"
 dependencies = [
  "instability",
  "ratatui-core",
@@ -2654,7 +2654,7 @@ dependencies = [
 [[package]]
 name = "ratatui-termwiz"
 version = "0.1.2"
-source = "git+https://github.com/ratatui/ratatui?branch=main#d1ef782b48ddf0cb825c111d4d8b9adef572c0e1"
+source = "git+https://github.com/ratatui/ratatui?branch=main#0297560d8d77871c0281a39182e4e650856e2ffd"
 dependencies = [
  "ratatui-core",
  "termwiz",
@@ -2663,7 +2663,7 @@ dependencies = [
 [[package]]
 name = "ratatui-widgets"
 version = "0.3.2"
-source = "git+https://github.com/ratatui/ratatui?branch=main#d1ef782b48ddf0cb825c111d4d8b9adef572c0e1"
+source = "git+https://github.com/ratatui/ratatui?branch=main#0297560d8d77871c0281a39182e4e650856e2ffd"
 dependencies = [
  "bitflags 2.13.2",
  "hashbrown 0.17.1",
@@ -3721,6 +3721,7 @@ version = "0.2.3"
 dependencies = [
  "arboard",
  "base64 0.22.1",
+ "bytes",
  "futures-util",
  "glob",
  "globset",
@@ -3728,6 +3729,7 @@ dependencies = [
  "ito",
  "keyring",
  "linkme",
+ "memchr",
  "mlua",
  "nix 0.31.3",
  "nucleo-matcher",

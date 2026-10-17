@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
+use bytes::{Buf, Bytes, BytesMut};
 use futures_util::StreamExt;
 use mlua::{BString, Lua, Table};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
@@ -155,7 +156,7 @@ struct Response {
 async fn stream(
     request: Request,
     head: oneshot::Sender<Result<Head, NetError>>,
-    chunks: mpsc::Sender<Result<Vec<u8>, NetError>>,
+    chunks: mpsc::Sender<Result<Bytes, NetError>>,
 ) {
     let idle = request.idle;
     let response = match request.build().send().await {
@@ -171,7 +172,7 @@ async fn stream(
     let mut body = response.bytes_stream();
     loop {
         let next = match tokio::time::timeout(idle, body.next()).await {
-            Ok(Some(chunk)) => chunk.map(Vec::from).map_err(NetError::from),
+            Ok(Some(chunk)) => chunk.map_err(NetError::from),
             Ok(None) => return,
             Err(_) => Err(NetError::Idle(idle.as_secs())),
         };
@@ -183,30 +184,34 @@ async fn stream(
 }
 
 struct Chunks {
-    receiver: mpsc::Receiver<Result<Vec<u8>, NetError>>,
-    buffer: Vec<u8>,
+    receiver: mpsc::Receiver<Result<Bytes, NetError>>,
+    buffer: BytesMut,
     done: bool,
 }
 
 enum Ready {
-    Line(Vec<u8>),
+    Line(Bytes),
     End,
     Wait,
 }
 
 impl Chunks {
-    fn split(&mut self) -> Option<Vec<u8>> {
-        let at = self.buffer.iter().position(|byte| *byte == NEWLINE)?;
-        let mut line: Vec<u8> = self.buffer.drain(..=at).collect();
-        line.pop();
-        if line.last() == Some(&RETURN) {
-            line.pop();
-        }
-        Some(line)
+    fn fill(&mut self, chunk: &[u8]) {
+        self.buffer.extend_from_slice(chunk);
     }
 
-    fn remainder(&mut self) -> Option<Vec<u8>> {
-        (!self.buffer.is_empty()).then(|| std::mem::take(&mut self.buffer))
+    fn split(&mut self) -> Option<Bytes> {
+        let end = memchr::memchr(NEWLINE, &self.buffer)?;
+        let mut line = self.buffer.split_to(end);
+        self.buffer.advance(1);
+        if line.last() == Some(&RETURN) {
+            line.truncate(line.len() - 1);
+        }
+        Some(line.freeze())
+    }
+
+    fn remainder(&mut self) -> Option<Bytes> {
+        (!self.buffer.is_empty()).then(|| std::mem::take(&mut self.buffer).freeze())
     }
 
     fn ready(&mut self) -> Result<Ready, NetError> {
@@ -218,14 +223,14 @@ impl Chunks {
                 return Ok(self.remainder().map_or(Ready::End, Ready::Line));
             }
             match self.receiver.try_recv() {
-                Ok(chunk) => self.buffer.extend(chunk?),
+                Ok(chunk) => self.fill(&chunk?),
                 Err(TryRecvError::Empty) => return Ok(Ready::Wait),
                 Err(TryRecvError::Disconnected) => self.done = true,
             }
         }
     }
 
-    async fn line(&mut self) -> Result<Option<Vec<u8>>, NetError> {
+    async fn line(&mut self) -> Result<Option<Bytes>, NetError> {
         loop {
             if let Some(line) = self.split() {
                 return Ok(Some(line));
@@ -237,16 +242,16 @@ impl Chunks {
         }
     }
 
-    async fn rest(&mut self) -> Result<Vec<u8>, NetError> {
+    async fn rest(&mut self) -> Result<Bytes, NetError> {
         while !self.done {
             self.pull().await?;
         }
-        Ok(std::mem::take(&mut self.buffer))
+        Ok(self.remainder().unwrap_or_default())
     }
 
     async fn pull(&mut self) -> Result<(), NetError> {
         match self.receiver.recv().await {
-            Some(chunk) => self.buffer.extend(chunk?),
+            Some(chunk) => self.fill(&chunk?),
             None => self.done = true,
         }
         Ok(())
@@ -281,14 +286,19 @@ impl Body {
         let limit = seconds(wait, "wait")?;
         let mut chunks = self.chunks.lock().await;
         match chunks.ready()? {
-            Ready::Line(line) => Ok(Line::Text(line.into())),
+            Ready::Line(line) => Ok(Line::Text(line.as_ref().into())),
             Ready::End => Ok(Line::End),
             Ready::Wait => Line::within(limit, chunks.line()).await,
         }
     }
 
     async fn read(&self) -> Result<BString, NetError> {
-        self.chunks.lock().await.rest().await.map(BString::from)
+        self.chunks
+            .lock()
+            .await
+            .rest()
+            .await
+            .map(|body| BString::from(body.as_ref()))
     }
 }
 
@@ -338,7 +348,7 @@ async fn open(opts: RequestOptions) -> Result<Body, NetError> {
         head,
         chunks: Mutex::new(Chunks {
             receiver,
-            buffer: Vec::new(),
+            buffer: BytesMut::new(),
             done: false,
         }),
         _task: guard,
