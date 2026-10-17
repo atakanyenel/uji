@@ -75,21 +75,23 @@ function Store:set_setting(key, value)
     self.db:exec("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", { key, value })
 end
 
-function Store:create_session(title, parent)
+function Store:draft_session(title, parent)
     local now = sys.os.now()
-    local row = {
+    return Session(self, {
         id = id.new(),
         title = title or UNTITLED,
         directory = sys.os.cwd(),
         parent = parent,
         time_created = now,
         time_updated = now,
-    }
-    self.db:exec(
-        "INSERT INTO sessions (id, title, directory, parent, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?)",
-        { row.id, row.title, row.directory, parent or sys.db.null, now, now }
-    )
-    return Session(self, row)
+        saved = false,
+    })
+end
+
+function Store:create_session(title, parent)
+    local session = self:draft_session(title, parent)
+    session:save()
+    return session
 end
 
 function Store:session(key)

@@ -1,7 +1,9 @@
+local text = require("ito").text
+
 uji.command.add("resume", {
     desc = "resume a session: the latest one here, or one by id",
     handler = function(rest)
-        local id = rest:match("^%s*(.-)%s*$")
+        local id = text.trim(rest)
         if id == "" then
             local latest = uji.session.list({ directory = uji.session.info().directory })[1]
             if not latest then
@@ -10,6 +12,9 @@ uji.command.add("resume", {
             end
             id = latest.id
         end
-        uji.session.resume(id)
+        local ok, problem = uji.session.resume(id)
+        if not ok then
+            uji.notify(problem)
+        end
     end,
 })

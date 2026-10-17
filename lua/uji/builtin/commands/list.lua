@@ -14,7 +14,10 @@ uji.command.add("list", {
             end,
         })
         if chosen then
-            uji.session.resume(chosen.id)
+            local ok, problem = uji.session.resume(chosen.id)
+            if not ok then
+                uji.notify(problem)
+            end
         end
     end,
 })

@@ -15,7 +15,7 @@ require("ito").setup({
 local function open_session(store, parsed)
     local Store = require("uji.core.store")
     if parsed.command == "new" then
-        return store:create_session(Store.UNTITLED), "session_created"
+        return store:draft_session(Store.UNTITLED), "session_created"
     end
     local id = parsed.flags.id
     if not id then

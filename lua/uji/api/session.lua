@@ -4,7 +4,6 @@ local cli = require("uji.core.cli")
 local config = require("uji.core.config")
 local list = require("uji.utils.list")
 local model = require("uji.core.model")
-local notices = require("uji.core.notices")
 local sys = require("uji.sys")
 local tokens = require("uji.core.agent.tokens")
 
@@ -150,17 +149,13 @@ function M.resume(key)
     if not cli.valid_id(key) then
         return nil, "invalid session id: " .. key
     end
-    if not app.store:session(key) then
-        return nil, "no session with id " .. key
-    end
     if app.session and app.session.id == key then
         return nil, "that session is already open"
     end
-    local ok, problem = config.resume(key)
-    if not ok then
-        notices.push(problem)
+    if not app.store:session(key) then
+        return nil, "no session with id " .. key
     end
-    return ok, problem
+    return config.resume(key)
 end
 
 uji.session = M

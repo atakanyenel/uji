@@ -137,7 +137,7 @@ function M.text(value)
     })
 end
 
-function M.tool_calls(round, calls)
+function M.tool_calls(round, calls, reason)
     local listed = {}
     for at, call in ipairs(calls) do
         listed[at] = {
@@ -150,7 +150,7 @@ function M.tool_calls(round, calls)
     return M.events({
         { choices = { { index = 0, delta = { tool_calls = sys.json.array(listed) }, finish_reason = sys.json.null } } },
         {
-            choices = { { index = 0, delta = {}, finish_reason = "tool_calls" } },
+            choices = { { index = 0, delta = {}, finish_reason = reason or "tool_calls" } },
             usage = { prompt_tokens = 10, completion_tokens = 2 },
         },
     })

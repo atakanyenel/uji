@@ -1,4 +1,5 @@
 local event = require("uji.core.event")
+local list = require("uji.utils.list")
 local model = require("uji.core.model")
 local notices = require("uji.core.notices")
 local packs = require("uji.core.packs")
@@ -69,10 +70,7 @@ local function relaunch(command, carry, action)
     if app.agent and app.agent:working() then
         return nil, "finish or interrupt the current turn before " .. action
     end
-    local argv = { app.argv[1] or "uji" }
-    for _, value in ipairs(command) do
-        argv[#argv + 1] = value
-    end
+    local argv = list.extended({ app.argv[1] or "uji" }, command)
     for _, flag in ipairs(FLAGS) do
         local value = app.flags[flag]
         if value then
@@ -86,6 +84,7 @@ end
 
 function M.reload(carry)
     local app = require("uji.core.app")
+    app.session:save()
     local draft = require("uji.core.ui").composer:text()
     local carried = tables.merged({ draft = draft }, carry)
     local ok, problem = relaunch({ "resume", "--id", app.session.id }, sys.json.encode(carried), "reloading")

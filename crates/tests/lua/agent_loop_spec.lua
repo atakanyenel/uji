@@ -125,30 +125,7 @@ end)
 
 it("reports a reply the output limit cut off", { timeout = 10 }, function()
     local mock = agent.serve(function()
-        return server.events({
-            {
-                choices = {
-                    {
-                        index = 0,
-                        delta = {
-                            tool_calls = sys.json.array({
-                                {
-                                    index = 0,
-                                    id = "c0",
-                                    type = "function",
-                                    ["function"] = { name = "read_file", arguments = '{"path": "notes.txt"' },
-                                },
-                            }),
-                        },
-                        finish_reason = sys.json.null,
-                    },
-                },
-            },
-            {
-                choices = { { index = 0, delta = {}, finish_reason = "length" } },
-                usage = { prompt_tokens = 10, completion_tokens = 2 },
-            },
-        })
+        return server.tool_calls(0, { { "read_file", '{"path": "notes.txt"' } }, "length")
     end)
     agent.allow_all()
     local messages = run(mock.url)

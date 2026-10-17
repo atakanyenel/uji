@@ -59,15 +59,14 @@ local function kind(value)
 end
 
 local function arguments(raw)
-    local trimmed = raw:match("^%s*(.-)%s*$")
-    local value, problem = json.object(trimmed)
+    local value, problem = json.object(raw)
     if not value then
         return nil,
             string.format(
                 "error: arguments are not valid JSON (%s). Send a single JSON object matching the tool schema, "
                     .. "with no markdown fences. Received: %s",
                 tostring(problem),
-                text.clip(trimmed, 500)
+                text.clip(raw, 500)
             )
     end
     if type(value) == "table" and getmetatable(value) ~= ARRAY then

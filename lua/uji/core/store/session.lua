@@ -22,8 +22,8 @@ local function summed(into, other)
     }
 end
 
-local function context(value)
-    return (value.input or 0) + (value.output or 0) + (value.cache_read or 0) + (value.cache_write or 0)
+local function context_tokens(spent)
+    return (spent.input or 0) + (spent.output or 0) + (spent.cache_read or 0) + (spent.cache_write or 0)
 end
 
 local function encode(message)
@@ -46,8 +46,21 @@ function Session:init(store, row)
     self.directory = row.directory
     self.parent = row.parent
     self.updated = row.time_updated
+    self.saved = row.saved ~= false
     self.tally = { usage = usage(), last = usage(), turns = 0 }
     ito.observable(self)
+end
+
+function Session:save()
+    if self.saved then
+        return
+    end
+    local now = sys.os.now()
+    self.store.db:exec(
+        "INSERT INTO sessions (id, title, directory, parent, time_created, time_updated) VALUES (?, ?, ?, ?, ?, ?)",
+        { self.id, self.title, self.directory, self.parent or sys.db.null, now, now }
+    )
+    self.saved, self.updated = true, now
 end
 
 function Session:entries()
@@ -85,6 +98,7 @@ function Session:append(message)
     local entry = { id = id.new(), seq = self:last_seq() + 1, time = now, message = message }
     local db = self.store.db
     local ok, err = pcall(db.transaction, db, function()
+        self:save()
         db:exec(
             "INSERT INTO messages (id, session_id, seq, type, time_created, data) VALUES (?, ?, ?, ?, ?, ?)",
             { entry.id, self.id, entry.seq, message.type, now, encode(message) }
@@ -100,6 +114,7 @@ function Session:append(message)
 end
 
 function Session:rename(title)
+    self:save()
     self.store.db:exec("UPDATE sessions SET title = ? WHERE id = ?", { title, self.id })
     self.title = title
 end
@@ -151,10 +166,11 @@ end
 
 function Session:used_tokens()
     local stored = self:entries()
-    for index = #stored, (tokens.last_compaction(stored) or 0) + 1, -1 do
+    local at = tokens.last_compaction(stored) or 0
+    for index = #stored, at + 1, -1 do
         local spent = stored[index].message.usage
         if spent then
-            return context(spent) + tokens.after(stored, stored[index].seq)
+            return context_tokens(spent) + tokens.after(stored, stored[index].seq)
         end
     end
     return tokens.total(stored)
