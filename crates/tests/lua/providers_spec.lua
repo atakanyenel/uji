@@ -1,4 +1,5 @@
 local providers = require("uji.builtin.providers")
+local server = require("support.server")
 local sys = require("uji.sys")
 local list = require("uji.utils.list")
 
@@ -131,6 +132,22 @@ it("names every provider after the file that registers it", function()
     for _, id in ipairs(names) do
         assert.is_true(registered[id] == true, id .. " has no provider named after its file")
     end
+end)
+
+it("lists the models a llama.cpp server holds", function()
+    providers.all()
+    local mock = server.start(function()
+        return {
+            status = 200,
+            body = uji.json.encode({ data = { { id = "qwen3-8b" }, { id = "llama-3.3-70b" } } }),
+        }
+    end)
+    uji.provider.add({ id = "llamacpp", base_url = mock.url .. "/v1" })
+    local loaded = uji.provider.load("llamacpp")
+    assert.equal(STATE.LOADED, loaded.state)
+    assert.same({ "qwen3-8b", "llama-3.3-70b" }, ids(loaded.models))
+    uji.model.use({ provider = "llamacpp" })
+    assert.equal("qwen3-8b", uji.model.current().model)
 end)
 
 it("leaves a provider file alone until something asks for it", function()

@@ -56,10 +56,10 @@ uji.provider.add({
 })
 ```
 
-uji calls the function when the provider is the current one, when `/models`
-lists it, and before the first request to it. The models it returns merge
-with the ones the provider already has. When it raises an error, the provider
-keeps its models, and uji calls it again the next time it needs them.
+uji calls the function with the provider when it is the current one, when
+`/models` lists it, and before the first request to it. The models it returns
+merge with the ones the provider already has. When it raises an error, the
+provider keeps its models, and uji calls it again the next time it needs them.
 
 ## Your own loop
 

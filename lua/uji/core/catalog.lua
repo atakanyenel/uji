@@ -201,7 +201,7 @@ function Provider:load()
         self.state = STATE.LOADING
         sys.task.spawn(function()
             local ok, err = pcall(function()
-                self:merge(loader())
+                self:merge(loader(self))
             end)
             local state, failure = ok and STATE.LOADED or STATE.FAILED, not ok and sys.message(err) or nil
             if self.loader == loader then
