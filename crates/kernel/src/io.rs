@@ -99,9 +99,9 @@ pub(crate) enum Line {
 }
 
 impl Line {
-    pub(crate) async fn within<E>(
+    pub(crate) async fn within<E, B: AsRef<[u8]>>(
         limit: Option<Duration>,
-        read: impl Future<Output = Result<Option<Vec<u8>>, E>>,
+        read: impl Future<Output = Result<Option<B>, E>>,
     ) -> Result<Self, E> {
         match limit {
             None => read.await.map(Self::from),
@@ -112,9 +112,9 @@ impl Line {
     }
 }
 
-impl From<Option<Vec<u8>>> for Line {
-    fn from(line: Option<Vec<u8>>) -> Self {
-        line.map_or(Self::End, |text| Self::Text(text.into()))
+impl<B: AsRef<[u8]>> From<Option<B>> for Line {
+    fn from(line: Option<B>) -> Self {
+        line.map_or(Self::End, |text| Self::Text(text.as_ref().into()))
     }
 }
 

@@ -159,7 +159,7 @@ fn next_line(
             return Ok(started.then_some(truncated));
         }
         started = true;
-        let ended = available.iter().position(|byte| *byte == NEWLINE);
+        let ended = memchr::memchr(NEWLINE, available);
         let chunk = ended.map_or(available, |at| &available[..at]);
         let take = chunk.len().min(keep.saturating_sub(line.len()));
         line.extend_from_slice(&chunk[..take]);
