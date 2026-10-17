@@ -67,7 +67,11 @@ return ito.view(function()
         return Live()
     end)
     local expanded = ito.state({})
-    local entries = app.session and app.session:entries() or {}
+    local session, scroll = app.session, ui.scroll
+    if session and scroll.pending < 0 and scroll.offset == 0 then
+        session:older()
+    end
+    local entries = session and session:entries() or {}
     local items = list.appended(entries, LIVE)
     local function row(item, index)
         if item == LIVE then

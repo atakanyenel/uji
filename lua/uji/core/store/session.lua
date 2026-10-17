@@ -8,6 +8,23 @@ local tables = require("uji.core.tables")
 local tokens = require("uji.core.agent.tokens")
 
 local PLACEHOLDERS = { [""] = true, untitled = true, new = true, resumed = true }
+local PAGE = 200
+
+local RECENT =
+    "SELECT id, seq, time_created, data FROM messages WHERE session_id = ? AND seq >= coalesce((SELECT max(seq) FROM messages WHERE session_id = ? AND type = 'compaction'), 0) ORDER BY seq"
+local EARLIER =
+    "SELECT id, seq, time_created, data FROM (SELECT id, seq, time_created, data FROM messages WHERE session_id = ? AND seq < ? ORDER BY seq DESC LIMIT ?) ORDER BY seq"
+
+local function read(session, sql, params)
+    return list.mapped(session.store.db:query(sql, params), function(row)
+        return {
+            id = row.id,
+            seq = row.seq,
+            time = row.time_created,
+            message = sys.json.decode(row.data, { nulls = false }),
+        }
+    end)
+end
 
 local function usage()
     return { input = 0, output = 0, cache_read = 0, cache_write = 0 }
@@ -64,21 +81,21 @@ function Session:save()
 end
 
 function Session:entries()
-    if self.stored then
-        return self.stored
+    self.stored = self.stored or read(self, RECENT, { self.id, self.id })
+    return self.stored
+end
+
+function Session:older(limit)
+    local first = self:entries()[1]
+    if not first or first.seq <= 1 then
+        return false
     end
-    local stored = {}
-    local rows = self.store.db:query("SELECT id, seq, time_created, data FROM messages WHERE session_id = ? ORDER BY seq", { self.id })
-    for index, row in ipairs(rows) do
-        stored[index] = {
-            id = row.id,
-            seq = row.seq,
-            time = row.time_created,
-            message = sys.json.decode(row.data, { nulls = false }),
-        }
+    local earlier = read(self, EARLIER, { self.id, first.seq, limit or PAGE })
+    if #earlier == 0 then
+        return false
     end
-    self.stored = stored
-    return stored
+    self.stored = list.extended(earlier, self.stored)
+    return true
 end
 
 function Session:messages()
