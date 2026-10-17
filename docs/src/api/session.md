@@ -40,9 +40,12 @@ local line = string.format("%d tokens over %d requests", usage.total, usage.requ
 
 ## uji.session.context()
 
-Returns a table with `used`, the estimated tokens in the conversation, `window`,
+Returns a table with `used`, the tokens the conversation takes up, `window`,
 the model's context size when uji knows it, and `usable`, the tokens the
-conversation may use before uji compacts it.
+conversation may use before uji compacts it. `used` is the count the provider
+reported for its last reply plus an estimate of the messages since then, so it
+reads the same when a session is opened again as it did while that reply came
+in. Only what follows the last compaction counts.
 
 ```lua
 local context = uji.session.context()
@@ -148,4 +151,16 @@ local ok, err = uji.session.delete(id)
 if not ok then
   uji.notify(err)
 end
+```
+
+## uji.session.resume(id)
+
+Opens another session: uji starts again in the session `id` names, the way
+`uji resume --id` does, and leaves this one. It returns `true`, or `nil` and a
+message when the id is not a session id, when no session has that id, when it
+is the session already open, or while a turn is running. Anything other than a
+string raises an error. `/list` and `/resume` are built on it.
+
+```lua
+uji.session.resume(id)
 ```

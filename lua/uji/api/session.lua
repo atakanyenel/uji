@@ -1,8 +1,10 @@
 local app = require("uji.core.app")
 local check = require("uji.core.check")
 local cli = require("uji.core.cli")
+local config = require("uji.core.config")
 local list = require("uji.utils.list")
 local model = require("uji.core.model")
+local notices = require("uji.core.notices")
 local sys = require("uji.sys")
 local tokens = require("uji.core.agent.tokens")
 
@@ -139,6 +141,26 @@ function M.delete(key)
         return nil, "no session with id " .. key
     end
     return true
+end
+
+function M.resume(key)
+    if type(key) ~= "string" then
+        error("uji.session.resume needs a session id", 2)
+    end
+    if not cli.valid_id(key) then
+        return nil, "invalid session id: " .. key
+    end
+    if not app.store:session(key) then
+        return nil, "no session with id " .. key
+    end
+    if app.session and app.session.id == key then
+        return nil, "that session is already open"
+    end
+    local ok, problem = config.resume(key)
+    if not ok then
+        notices.push(problem)
+    end
+    return ok, problem
 end
 
 uji.session = M

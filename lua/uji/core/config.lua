@@ -64,13 +64,15 @@ function M.settle(args)
     return true
 end
 
-function M.reload(carry)
+local function relaunch(command, carry, action)
     local app = require("uji.core.app")
     if app.agent and app.agent:working() then
-        notices.push("finish or interrupt the current turn before reloading")
-        return
+        return nil, "finish or interrupt the current turn before " .. action
     end
-    local argv = { app.argv[1] or "uji", "resume", "--id", app.session.id }
+    local argv = { app.argv[1] or "uji" }
+    for _, value in ipairs(command) do
+        argv[#argv + 1] = value
+    end
     for _, flag in ipairs(FLAGS) do
         local value = app.flags[flag]
         if value then
@@ -78,9 +80,22 @@ function M.reload(carry)
             argv[#argv + 1] = value
         end
     end
+    sys.os.restart({ args = argv, roots = packs.expected(), carry = carry })
+    return true
+end
+
+function M.reload(carry)
+    local app = require("uji.core.app")
     local draft = require("uji.core.ui").composer:text()
     local carried = tables.merged({ draft = draft }, carry)
-    sys.os.restart({ args = argv, roots = packs.expected(), carry = sys.json.encode(carried) })
+    local ok, problem = relaunch({ "resume", "--id", app.session.id }, sys.json.encode(carried), "reloading")
+    if not ok then
+        notices.push(problem)
+    end
+end
+
+function M.resume(id)
+    return relaunch({ "resume", "--id", id }, nil, "resuming another session")
 end
 
 return M

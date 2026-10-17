@@ -116,7 +116,7 @@ function Parts:tool_calls()
     end)
     local calls = {}
     for _, call in ipairs(self.calls) do
-        if incomplete(call.arguments) then
+        if self.hit_limit and incomplete(call.arguments) then
             return nil, truncated_call(call.name)
         end
         calls[#calls + 1] = { id = call.id, name = call.name, arguments = call.arguments, signature = call.signature }
