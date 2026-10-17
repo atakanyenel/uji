@@ -91,6 +91,7 @@ Every function lives under the global `uji` table. A function that finishes late
 | [`uji.session.submit(text)`](session.md#ujisessionsubmittext) | Sends a message as if you typed it. |
 | [`uji.session.interrupt()`](session.md#ujisessioninterrupt) | Stops the current turn, or the running `!` command. |
 | [`uji.session.compact()`](session.md#ujisessioncompact) | Summarises earlier messages to free context. |
+| [`uji.session.resume(id)`](session.md#ujisessionresumeid) | Starts uji again in the session the id names. |
 
 ## Input line
 

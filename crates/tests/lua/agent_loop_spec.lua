@@ -96,6 +96,67 @@ it("answers malformed arguments and unknown tools without running them", { timeo
     }, agent.tool_results(run(mock.url)))
 end)
 
+it("answers arguments that are not JSON instead of ending the turn", { timeout = 10 }, function()
+    local mock = agent.serve(function(round)
+        if round == 0 then
+            return server.tool_calls(0, { { "read_file", '{"path": "notes.txt"' } })
+        end
+        return server.text("ok")
+    end)
+    agent.allow_all()
+    local messages = run(mock.url)
+    local problem = agent.tool_results(messages)[1]
+    assert.is_true(problem:find("error: arguments are not valid JSON", 1, true) ~= nil, problem)
+    assert.equal("ok", agent.last_answer(messages))
+end)
+
+it("runs a call whose arguments carry a stray closing character", { timeout = 10 }, function()
+    local mock = agent.serve(function(round)
+        if round == 0 then
+            return server.tool_calls(0, { { "read_file", '{"path":"notes.txt"}}' } })
+        end
+        return server.text("ok")
+    end)
+    agent.allow_all()
+    local messages = run(mock.url)
+    assert.same({ "    1| alpha\n    2| line two\n    3| gamma\n" }, agent.tool_results(messages))
+    assert.equal("ok", agent.last_answer(messages))
+end)
+
+it("reports a reply the output limit cut off", { timeout = 10 }, function()
+    local mock = agent.serve(function()
+        return server.events({
+            {
+                choices = {
+                    {
+                        index = 0,
+                        delta = {
+                            tool_calls = sys.json.array({
+                                {
+                                    index = 0,
+                                    id = "c0",
+                                    type = "function",
+                                    ["function"] = { name = "read_file", arguments = '{"path": "notes.txt"' },
+                                },
+                            }),
+                        },
+                        finish_reason = sys.json.null,
+                    },
+                },
+            },
+            {
+                choices = { { index = 0, delta = {}, finish_reason = "length" } },
+                usage = { prompt_tokens = 10, completion_tokens = 2 },
+            },
+        })
+    end)
+    agent.allow_all()
+    local messages = run(mock.url)
+    local last = messages[#messages]
+    assert.equal("error", last.type)
+    assert.is_true(last.text:find("cut off while calling `read_file`", 1, true) ~= nil, last.text)
+end)
+
 it("steers a turn with a message sent during it", { timeout = 15 }, function()
     local mock = agent.serve(function(round)
         if round == 0 then
@@ -348,6 +409,14 @@ it("tells how much of the window the conversation may use", function()
     uji.model.use({ provider = "test", model = "m" })
     assert.equal(10000, uji.session.context().window)
     assert.equal(9000, uji.session.context().usable)
+end)
+
+it("reports the context the provider counted", { timeout = 10 }, function()
+    local mock = agent.serve(function()
+        return server.text("done")
+    end)
+    agent.run({ url = mock.url })
+    assert.equal(12, uji.session.context().used)
 end)
 
 it("shows the compaction while the summary is written, and stops it on esc", { timeout = 20 }, function()

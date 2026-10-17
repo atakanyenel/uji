@@ -1,4 +1,5 @@
 local class = require("uji.core.class")
+local json = require("uji.utils.json")
 local model = require("uji.core.model")
 local sys = require("uji.sys")
 local text = require("ito").text
@@ -59,16 +60,13 @@ end
 
 local function arguments(raw)
     local trimmed = raw:match("^%s*(.-)%s*$")
-    if trimmed == "" then
-        return {}
-    end
-    local ok, value = pcall(sys.json.decode, trimmed)
-    if not ok then
+    local value, problem = json.object(trimmed)
+    if not value then
         return nil,
             string.format(
                 "error: arguments are not valid JSON (%s). Send a single JSON object matching the tool schema, "
                     .. "with no markdown fences. Received: %s",
-                tostring(value),
+                tostring(problem),
                 text.clip(trimmed, 500)
             )
     end
@@ -211,6 +209,7 @@ function Loop:run()
             tool_calls = calls,
             reasoning = answer.reasoning,
             replay = answer.replay,
+            usage = answer.usage,
         }
         if #calls == 0 then
             if not self.agent:queued() then

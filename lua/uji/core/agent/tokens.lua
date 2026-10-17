@@ -35,6 +35,7 @@ end
 function M.weigh(message)
     local count = chars(M.text(message))
     if message.type == "assistant" then
+        count = count + chars(message.reasoning)
         for _, call in ipairs(message.tool_calls or {}) do
             count = count + chars(call.name) + chars(call.arguments)
         end

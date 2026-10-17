@@ -1,3 +1,5 @@
+local json = require("uji.utils.json")
+
 local MIN_ANSWER = 1024
 local MIN_BUDGET = 1024
 local BUDGET = { minimal = 1024, low = 2048, medium = 8192, high = 16384 }
@@ -18,8 +20,8 @@ function M.fit_thinking(effort, max_output)
 end
 
 function M.arguments(raw)
-    local ok, value = pcall(uji.json.decode, raw)
-    if ok and type(value) == "table" and getmetatable(value) ~= ARRAY then
+    local value = json.object(raw)
+    if type(value) == "table" and getmetatable(value) ~= ARRAY then
         return value
     end
     return {}

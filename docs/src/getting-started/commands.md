@@ -32,6 +32,8 @@ lists the environment variables that do the same.
 | `/effort` | Sets the reasoning effort, from the levels the current model accepts. |
 | `/thinking` | Shows or hides the model's reasoning. |
 | `/compact` | Summarises earlier messages to free context. |
+| `/list` | Lists the sessions in this directory. Enter starts uji again in the one you pick. |
+| `/resume` | Starts uji again in the latest session here, or `/resume <ID>` in that one. |
 | `/sync` | Updates installed packs and reloads. |
 | `/reload` | Starts uji again with your current config and files, keeping the conversation and your draft. |
 | `/help` | Lists every command, including the ones plugins add. |

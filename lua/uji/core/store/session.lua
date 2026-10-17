@@ -22,8 +22,8 @@ local function summed(into, other)
     }
 end
 
-local function prefix(value)
-    return (value.input or 0) + (value.cache_read or 0) + (value.cache_write or 0)
+local function context(value)
+    return (value.input or 0) + (value.output or 0) + (value.cache_read or 0) + (value.cache_write or 0)
 end
 
 local function encode(message)
@@ -47,8 +47,6 @@ function Session:init(store, row)
     self.parent = row.parent
     self.updated = row.time_updated
     self.tally = { usage = usage(), last = usage(), turns = 0 }
-    self.reported_input = 0
-    self.reported_seq = 0
     ito.observable(self)
 end
 
@@ -93,10 +91,6 @@ function Session:append(message)
         )
         db:exec("UPDATE sessions SET time_updated = ? WHERE id = ?", { now, self.id })
     end)
-    if message.type == "compaction" then
-        self.reported_input = 0
-        self.reported_seq = 0
-    end
     self.stored = list.appended(stored, entry)
     event.emit("message_appended", { type = message.type, text = tokens.text(message) })
     if not ok then
@@ -142,10 +136,6 @@ function Session:add_cost(spent)
 end
 
 function Session:add_usage(spent)
-    if prefix(spent) > 0 then
-        self.reported_input = prefix(spent)
-        self.reported_seq = self:last_seq()
-    end
     local tally = self.tally
     self.tally = {
         usage = summed(tally.usage, spent),
@@ -161,13 +151,15 @@ end
 
 function Session:used_tokens()
     local stored = self:entries()
-    if self.reported_input > 0 then
-        return self.reported_input + tokens.after(stored, self.reported_seq)
+    for index = #stored, (tokens.last_compaction(stored) or 0) + 1, -1 do
+        local spent = stored[index].message.usage
+        if spent then
+            return context(spent) + tokens.after(stored, stored[index].seq)
+        end
     end
     return tokens.total(stored)
 end
 
-Session.prefix = prefix
 Session.encode = encode
 
 return Session
