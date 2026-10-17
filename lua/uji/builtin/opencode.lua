@@ -1,6 +1,7 @@
 local catalog = require("uji.core.catalog")
 local common = require("uji.builtin.apis.common")
 local list = require("uji.utils.list")
+local tables = require("uji.core.tables")
 
 local METADATA = "https://models.dev/api.json"
 local AGENT = "uji/" .. require("uji.version")
@@ -54,12 +55,27 @@ local known = {}
 
 local function metadata(source)
     if not known[source] then
-        local all = fetch(METADATA)
+        local ok, all = pcall(fetch, METADATA)
         for _, name in ipairs({ "opencode", "opencode-go" }) do
-            known[name] = all[name] and all[name].models or {}
+            known[name] = ok and all[name] and all[name].models or {}
         end
     end
     return known[source]
+end
+
+local function client_for(info)
+    local source = info and info.provider or {}
+    if source.npm then
+        return CLIENTS[source.npm] or CHAT
+    end
+    local api = source.api or ""
+    if api:find("/anthropic/", 1, true) then
+        return CLIENTS["@ai-sdk/anthropic"]
+    end
+    if api:find("/google/", 1, true) then
+        return CLIENTS["@ai-sdk/google"]
+    end
+    return CHAT
 end
 
 local function efforts(options)
@@ -124,18 +140,30 @@ function OpenCode:stream(request, reply)
     return self:route(request.model):stream(request, reply)
 end
 
+function OpenCode:listed()
+    local ok, body = pcall(fetch, self.spec.base_url .. "/models")
+    if not ok then
+        return nil, body
+    end
+    return list.mapped(body.data or {}, function(item)
+        return item.id
+    end)
+end
+
 function OpenCode:models()
     local info = metadata(self.spec.source)
-    local out = {}
-    for _, item in ipairs(fetch(self.spec.base_url .. "/models").data) do
-        local found = info[item.id]
-        self.routes[item.id] = CLIENTS[found and found.provider and found.provider.npm] or CHAT
-        out[#out + 1] = model(item.id, found)
+    local ids, problem = self:listed()
+    if not ids or #ids == 0 then
+        ids = tables.keys(info)
     end
-    table.sort(out, function(a, b)
-        return a.id < b.id
+    if #ids == 0 then
+        error(problem or "no models to list", 0)
+    end
+    table.sort(ids)
+    return list.mapped(ids, function(id)
+        self.routes[id] = client_for(info[id])
+        return model(id, info[id])
     end)
-    return out
 end
 
 return function(spec)

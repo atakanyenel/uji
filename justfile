@@ -32,6 +32,11 @@ lua:
     selene lua/uji crates/kernel/src bench
     selene --config .config/selene/tests.toml crates/tests/lua
 
+# Refresh the provider model tables from models.dev. `--check` reports only.
+models *args:
+    uv run scripts/models.py {{args}}
+    stylua lua/uji/builtin/providers
+
 # The Lua specs; filters pick tests by name, like `just test screen::`.
 test *filters:
     cargo run --release -q -p uji-tests --bin uji-test -- -l crates/tests/lua/main.lua {{filters}}

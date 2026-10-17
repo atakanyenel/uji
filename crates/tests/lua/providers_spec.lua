@@ -134,6 +134,13 @@ it("names every provider after the file that registers it", function()
     end
 end)
 
+it("keeps a saved DeepSeek Flash id on Flash when its alias retires", function()
+    providers.load("deepseek")
+    require("uji.core.model").remember("deepseek", "deepseek-v4-flash")
+    uji.model.use({ provider = "deepseek" })
+    assert.equal("deepseek-flash", uji.model.current().model)
+end)
+
 it("lists the models a llama.cpp server holds", function()
     providers.all()
     local mock = server.start(function()

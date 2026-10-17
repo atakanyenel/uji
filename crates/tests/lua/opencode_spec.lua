@@ -1,6 +1,7 @@
 local agent = require("support.agent")
 local app = require("uji.core.app")
 local catalog = require("uji.core.catalog")
+local list = require("uji.utils.list")
 local server = require("support.server")
 local sys = require("uji.sys")
 
@@ -118,6 +119,60 @@ it("sends each model to the API that models.dev names for it", function()
         assert.equal(before + 1, #mock.requests, id)
         assert.equal(path, mock.requests[#mock.requests].path, id)
     end
+end)
+
+it("lists models.dev's models when the endpoint names none", function()
+    metadata({ ["glm-x"] = { limit = { context = 200000, output = 32000 } }, ["gpt-x"] = {} })
+    local mock = server.start(function()
+        return server.status(500, "boom")
+    end)
+    register(mock)
+    local rows = uji.provider.load("opencode-test").models
+    assert.same(
+        { "glm-x", "gpt-x" },
+        list.mapped(rows, function(row)
+            return row.id
+        end)
+    )
+    assert.equal(200000, find(rows, "glm-x").context)
+end)
+
+it("lists the endpoint's models when models.dev cannot be read", function()
+    local request = uji.http.request
+    uji.http.request = function(opts, ...)
+        if opts.url == METADATA then
+            return nil, "offline"
+        end
+        return request(opts, ...)
+    end
+    local mock = inventory({ "glm-x" })
+    register(mock)
+    local rows = uji.provider.load("opencode-test").models
+    assert.same(
+        { "glm-x" },
+        list.mapped(rows, function(row)
+            return row.id
+        end)
+    )
+    assert.is_nil(find(rows, "glm-x").context)
+end)
+
+it("sends a model with no npm by the protocol its api names", function()
+    metadata({ ["claude-x"] = { provider = { api = "https://opencode.ai/inference/anthropic/v1" } } })
+    local mock = inventory({ "claude-x" })
+    local provider = register(mock)
+    uji.provider.load("opencode-test")
+    provider.api:stream({
+        model = "claude-x",
+        provider = { id = provider.id, base_url = provider.base_url },
+        auth = { key = "test-key" },
+        messages = { { type = "user", text = "hi" } },
+        tools = {},
+        reasoning = false,
+        max_output = 16,
+        cache = "off",
+    }, { fail = function() end })
+    assert.equal("/v1/messages", mock.requests[#mock.requests].path)
 end)
 
 it("sends the session and its own user agent on chat, title and compaction requests", { timeout = 20 }, function()
