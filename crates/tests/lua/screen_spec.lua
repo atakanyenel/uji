@@ -316,6 +316,51 @@ describe("the screen", function()
         assert.is_false(any(followed, "Jump to bottom"))
     end)
 
+    local function compacted(older, fresh)
+        local session = app.store:create_session("paging")
+        for index = 1, older do
+            session:append({ type = "user", text = "old " .. index })
+        end
+        local marker = session:append({ type = "compaction", summary = "earlier" })
+        for index = 1, fresh do
+            session:append({ type = "user", text = "fresh " .. index })
+        end
+        app.attach(app.store:session(session.id))
+        ui.scroll:to_end()
+        screen.rows(true)
+        return marker
+    end
+
+    it("asks for the messages before the first one when scrolled to the top", { size = { 40, 16 } }, function()
+        local marker = compacted(250, 20)
+        assert.equal(21, #app.session:entries(), "the compaction keeps only what came after it")
+        screen.press("pageup")
+        screen.rows()
+        assert.equal(21, #app.session:entries(), "scrolling inside the page you have loads nothing")
+        screen.press("home")
+        screen.rows()
+        assert.equal(221, #app.session:entries(), "reaching the top loads the page before")
+        screen.press("home")
+        screen.rows()
+        assert.equal(271, #app.session:entries(), "and the one before that")
+        screen.press("home")
+        screen.rows()
+        assert.equal(271, #app.session:entries(), "and stops where the session starts")
+        screen.press("pageup")
+        local rows = screen.rows()
+        local top = app.session:entries()[ui.scroll.top.index]
+        assert.is_true(top.seq < marker.seq, "scrolling up shows the messages it loaded")
+        assert.is_true(any(rows, top.message.text), "and draws them")
+    end)
+
+    it("asks for them from the wheel too", { size = { 40, 16 } }, function()
+        compacted(50, 1)
+        assert.equal(2, #app.session:entries())
+        ui:mouse({ kind = "scroll_up" })
+        screen.rows()
+        assert.equal(52, #app.session:entries(), "a wheel tick at the first row loads the page before")
+    end)
+
     it("opens hidden output on a click and folds it on the next", { size = { 40, 16 } }, function()
         local copied = copied_to()
         for index = 1, 30 do

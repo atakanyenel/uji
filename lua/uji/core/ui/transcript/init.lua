@@ -67,9 +67,9 @@ return ito.view(function()
         return Live()
     end)
     local expanded = ito.state({})
-    local session, scroll = app.session, ui.scroll
-    if session and scroll.pending < 0 and scroll.offset == 0 then
-        session:older()
+    local session = app.session
+    local function older()
+        return session ~= nil and session:older()
     end
     local entries = session and session:entries() or {}
     local items = list.appended(entries, LIVE)
@@ -93,7 +93,7 @@ return ito.view(function()
         })
     end
     return ito.VStack({
-        ito.LazyVStack(items, row):item_id(identity):state(ui.scroll):footer(Footer()):grow(),
+        ito.LazyVStack(items, row):item_id(identity):state(ui.scroll):footer(Footer()):more(older):grow(),
         ito.Spacer():height(ctx.limits.bottom_gap),
     }):overlay(
         ito.SubcomposeLayout(function()

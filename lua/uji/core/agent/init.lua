@@ -4,6 +4,7 @@ local context = require("uji.core.context")
 local event = require("uji.core.event")
 local Files = require("uji.core.system.files")
 local images = require("uji.core.images")
+local instructions = require("uji.core.instructions")
 local ito = require("ito")
 local list = require("uji.utils.list")
 local model = require("uji.core.model")
@@ -70,6 +71,7 @@ function Agent:init(session)
     self.queue = {}
     self.state = "idle"
     self.compaction = nil
+    self.instructions = instructions.section(session.directory)
     self.confirm = function()
         return false
     end
@@ -185,8 +187,9 @@ function Agent:repair()
 end
 
 function Agent:prompt(text)
+    local env = { directory = self.session.directory, os = sys.os.platform, instructions = self.instructions }
     local ok, base = pcall(function()
-        return require("uji.core.prompt").system({ directory = self.session.directory, os = sys.os.platform })
+        return require("uji.core.prompt").system(env)
     end)
     if not ok then
         notices.push("uji.core.prompt: " .. tostring(base))

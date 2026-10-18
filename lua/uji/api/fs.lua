@@ -11,6 +11,9 @@ uji.fs = {
     read = task.callback(function(path)
         return files():read(path)
     end),
+    stat = task.callback(function(path)
+        return sys.fs.stat(files():resolve(path))
+    end),
     lines = task.callback(function(path, opts)
         opts = opts or {}
         return files():lines(path, {
@@ -29,4 +32,5 @@ uji.fs = {
         return files():glob(pattern)
     end),
     join = sys.fs.join,
+    parent = sys.fs.parent,
 }

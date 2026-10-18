@@ -141,6 +141,7 @@ Without a state it follows nothing and starts at the top.
 | `:item_id(id)` | Gives each item a lasting id, so its place and state follow it when items come and go. Two items with one id raise an error. |
 | `:state(scroll)` | The [`ito.ScrollState`](#itoscrollstateopts) it scrolls by. |
 | `:footer(view)` | A view under the rows, right after the last one when they do not fill the room. |
+| `:more(load)` | Calls `load` when a move up reaches the first row, so the list can put the rows before it in `items`. The row you were on stays where it was. |
 
 ```lua
 local ito = require("ito")

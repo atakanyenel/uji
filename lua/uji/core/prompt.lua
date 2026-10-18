@@ -40,7 +40,11 @@ Ask with `ask_user` when you are blocked on a decision that is genuinely theirs:
 Be concise and factual. State what you changed and where, referencing paths like `src/app.rs:42`. Do not paste back files you just wrote, and do not tell the user to save anything - your edits are already on disk.]]
 
 function M.system(env)
-    return M.text .. "\n\n# Environment\n\nWorking directory: " .. env.directory .. "\nOS: " .. env.os
+    local text = M.text
+    if env.instructions then
+        text = text .. "\n\n" .. env.instructions
+    end
+    return text .. "\n\n# Environment\n\nWorking directory: " .. env.directory .. "\nOS: " .. env.os
 end
 
 return M

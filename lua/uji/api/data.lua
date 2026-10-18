@@ -13,6 +13,9 @@ local function file(name, api)
 end
 
 uji.data = {
+    dir = function()
+        return paths.data()
+    end,
     read = task.callback(function(name)
         local path = file(name, "uji.data.read")
         if not path then
