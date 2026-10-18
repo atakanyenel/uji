@@ -28,6 +28,10 @@ local SCROLL_LINES = 3
 local ALLOWED_WHILE_COMPACTING = {
     interrupt = true,
     quit = true,
+    modal_up = true,
+    modal_down = true,
+    modal_accept = true,
+    modal_cancel = true,
     scroll_top = true,
     scroll_bottom = true,
     scroll_up = true,
@@ -738,10 +742,14 @@ function Ui:listen()
             self.scroll:to_end()
         end,
     }
-    for _, name in ipairs({ "message_appended", "queue_changed", "session_titled", "model_changed", "session_compacted" }) do
+    for _, name in ipairs({ "message_appended", "queue_changed", "session_titled", "model_changed" }) do
         handlers[name] = function()
             self:invalidate()
         end
+    end
+    handlers.session_compacted = function()
+        self.scroll:to_end()
+        self:invalidate()
     end
     for name, handler in pairs(handlers) do
         event.on(name, handler, { name = "uji.ui." .. name })

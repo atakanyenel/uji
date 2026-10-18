@@ -4,6 +4,7 @@ local sandbox = require("support.sandbox")
 local screen = require("support.ui")
 local server = require("support.server")
 local sys = require("uji.sys")
+local ui = require("uji.core.ui")
 local wait = require("support.wait")
 
 local function run(url, opts)
@@ -460,6 +461,25 @@ it("does not remember a stopped manual compaction", { timeout = 20 }, function()
     assert.is_true(app.agent:interrupt())
     assert.is_nil(app.agent.compaction)
     assert.is_falsy(app.agent.skipped_compaction)
+end)
+
+it("brings the compacted marker into view", { size = { 80, 12 }, timeout = 20 }, function()
+    summarising()
+    seeded()
+    app.agent:compact()
+    ui.scroll:scroll(-20)
+    wait.eventually(function()
+        return not app.agent:working()
+    end)
+    local rule = ui.theme.tokens.symbols.rule
+    local found
+    for _, row in ipairs(screen.rows()) do
+        if row:find("compacted", 1, true) and row:find(rule, 1, true) then
+            found = row
+            break
+        end
+    end
+    assert.truthy(found, "the marker is on screen")
 end)
 
 describe("a plugin", function()
