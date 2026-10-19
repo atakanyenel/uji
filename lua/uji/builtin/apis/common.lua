@@ -1,4 +1,5 @@
 local json = require("uji.utils.json")
+local tables = require("uji.core.tables")
 
 local MIN_ANSWER = 1024
 local MIN_BUDGET = 1024
@@ -97,6 +98,69 @@ end
 function M.session(request)
     local session = request.ctx and request.ctx.session
     return session and session.id
+end
+
+local UNSUPPORTED = {
+    ["$ref"] = true,
+    ["$defs"] = true,
+    definitions = true,
+    allOf = true,
+    oneOf = true,
+    anyOf = true,
+    patternProperties = true,
+    ["not"] = true,
+    ["if"] = true,
+    ["then"] = true,
+    ["else"] = true,
+}
+
+local function strict_node(schema)
+    if type(schema) ~= "table" then
+        return nil
+    end
+    for key in pairs(UNSUPPORTED) do
+        if schema[key] ~= nil then
+            return nil
+        end
+    end
+    local out = tables.copy(schema)
+    if schema.type == "array" then
+        if schema.items == nil or schema.items[1] ~= nil then
+            return nil
+        end
+        out.items = strict_node(schema.items)
+        return out.items and out or nil
+    end
+    if schema.type ~= "object" then
+        return out
+    end
+    if schema.additionalProperties ~= nil and schema.additionalProperties ~= false then
+        return nil
+    end
+    local required = {}
+    for _, name in ipairs(schema.required or {}) do
+        required[name] = true
+    end
+    out.properties = {}
+    out.required = uji.json.array({})
+    for name, property in pairs(schema.properties or {}) do
+        local child = strict_node(property)
+        if not child then
+            return nil
+        end
+        out.properties[name] = required[name] and child or { anyOf = { child, { type = "null" } } }
+        out.required[#out.required + 1] = name
+    end
+    table.sort(out.required)
+    out.additionalProperties = false
+    return out
+end
+
+function M.strict(parameters)
+    if type(parameters) ~= "table" or parameters.type ~= "object" then
+        return nil
+    end
+    return strict_node(parameters)
 end
 
 return M
