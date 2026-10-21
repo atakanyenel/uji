@@ -180,7 +180,7 @@ it("sends the session and its own user agent on chat, title and compaction reque
     local round = 0
     local mock = inventory({ "glm-x" }, function(request)
         if not server.has_tools(request) then
-            local compacting = server.system(request):find("compact", 1, true)
+            local compacting = server.summarising(request)
             return server.text(compacting and "SUMMARY" or "Title")
         end
         round = round + 1
@@ -209,8 +209,7 @@ it("sends the session and its own user agent on chat, title and compaction reque
             assert.equal(app.session.id, request.headers["x-opencode-session"])
             assert.equal("uji", request.headers["x-opencode-client"])
             assert.equal("uji/", request.headers["user-agent"]:sub(1, 4))
-            local system = server.system(request)
-            local kind = server.has_tools(request) and "turn" or system:find("compact", 1, true) and "compaction" or "title"
+            local kind = server.has_tools(request) and "turn" or server.summarising(request) and "compaction" or "title"
             kinds[kind] = true
         end
     end

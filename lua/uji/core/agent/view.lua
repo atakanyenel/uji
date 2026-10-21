@@ -121,8 +121,15 @@ function M.build(stored)
     return out
 end
 
+local CUTS = { user = true, assistant = true, context = true, error = true }
+local STARTS = { user = true, context = true }
+
 local function cut_point(message)
-    return message.type ~= "tool"
+    return CUTS[message.type] == true
+end
+
+local function turn_start(message)
+    return STARTS[message.type] == true
 end
 
 function M.cut_index(messages, keep_recent)
@@ -167,10 +174,25 @@ function M.find_cut(stored, keep_recent)
     if not first_kept then
         return nil
     end
+    local prefix
+    if not turn_start(messages[first_kept]) then
+        local start
+        for index = first_kept - 1, 1, -1 do
+            if turn_start(messages[index]) then
+                start = index
+                break
+            end
+        end
+        if start then
+            prefix = { from = offset + start, to = offset + first_kept - 1 }
+        end
+    end
     return {
         from = marker or 1,
         through = stored[offset + first_kept - 1].seq,
         compacted = offset + first_kept - 1,
+        history_to = prefix and prefix.from - 1 or offset + first_kept - 1,
+        prefix = prefix,
         span = offset + first_kept - (marker or 1),
     }
 end

@@ -119,6 +119,10 @@ function M.system(request)
     return first and type(first.content) == "string" and first.content or ""
 end
 
+function M.summarising(request)
+    return M.system(request):find("context summarization", 1, true) ~= nil
+end
+
 function M.events(chunks)
     local lines = {}
     for index, chunk in ipairs(chunks) do

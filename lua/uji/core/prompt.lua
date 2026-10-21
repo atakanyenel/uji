@@ -35,7 +35,14 @@ Ask with `ask_user` when you are blocked on a decision that is genuinely theirs:
 - Do not fix unrelated bugs or reformat untouched code. Mention them in your reply instead.
 - Do not add comments explaining the change; write code that reads like the code around it.
 - Do not create git commits or branches unless asked.
-- After editing, verify with the project's own build or tests when they exist.
+
+# Verifying
+
+- A change is done when a command you ran shows it works, not when the edit landed.
+- Run the narrowest check that exercises what you changed, then the project's own wider check when the change is not isolated. Read the output instead of assuming it passed.
+- After fixing a failure, re-run the exact check that failed, not a different one.
+- If a check cannot run here, say which one and why. Never call something verified when you did not run it.
+- Name what the checks do not cover when they miss the change.
 
 # Changing uji
 

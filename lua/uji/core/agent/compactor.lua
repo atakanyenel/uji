@@ -1,22 +1,38 @@
+local list = require("uji.utils.list")
 local model = require("uji.core.model")
+local sys = require("uji.sys")
+local tables = require("uji.core.tables")
 local tokens = require("uji.core.agent.tokens")
 local view = require("uji.core.agent.view")
 
-local MAX_INPUT = 200000
+local TOOL_RESULT_MAX_CHARS = 2000
 
-local FORMAT = [[## Goal
-[What the user is trying to accomplish. Multiple items if the session covers several tasks.]
+local SYSTEM = "You are a context summarization assistant. Your task is to read a conversation "
+    .. "between a user and an AI assistant, then produce a structured summary following the exact "
+    .. "format specified.\n\nDo NOT continue the conversation. Do NOT respond to any questions in "
+    .. "the conversation. ONLY output the structured summary."
+
+local PROMPT =
+    [[The messages above are a conversation to summarize. Create a structured context checkpoint summary that another LLM will use to continue the work.
+
+Use this EXACT format:
+
+## Goal
+[What is the user trying to accomplish? Can be multiple items if the session covers different tasks.]
 
 ## Constraints & Preferences
-- [Constraints, preferences or requirements the user stated, or "(none)"]
+- [Any constraints, preferences, or requirements mentioned by user]
+- [Or "(none)" if none were mentioned]
 
 ## Progress
 ### Done
-- [x] [Completed work]
+- [x] [Completed tasks/changes]
+
 ### In Progress
 - [ ] [Current work]
+
 ### Blocked
-- [What is preventing progress, or "(none)"]
+- [Issues preventing progress, if any]
 
 ## Key Decisions
 - **[Decision]**: [Brief rationale]
@@ -25,87 +41,201 @@ local FORMAT = [[## Goal
 1. [Ordered list of what should happen next]
 
 ## Critical Context
-- [Data, examples or references needed to continue, or "(none)"]
+- [Any data, examples, or references needed to continue]
+- [Or "(none)" if not applicable]
 
-Keep each section concise. Preserve exact file paths, function names, commands and error strings verbatim.]]
+Keep each section concise. Preserve exact file paths, function names, and error messages.]]
 
-local PROMPT = "You compact coding sessions. The messages above are a conversation to "
-    .. "summarise. Write a structured checkpoint that another agent will use to continue the work "
-    .. "without the original transcript. Do not invent anything that is not in the transcript. "
-    .. "Reply with the summary alone, no preamble.\n\n"
-    .. "Use this EXACT format:\n\n"
+local UPDATE_PROMPT =
+    [[The messages above are NEW conversation messages to incorporate into the existing summary provided in <previous-summary> tags.
 
-local UPDATE_PROMPT = "You maintain a rolling checkpoint of a coding session. The "
-    .. "existing checkpoint is in <previous-summary> tags; the messages after it are NEW activity "
-    .. "to fold in.\n\n"
-    .. "RULES:\n"
-    .. "- PRESERVE every fact from the previous checkpoint unless it became wrong.\n"
-    .. '- MOVE items from "In Progress" to "Done" as they complete.\n'
-    .. '- UPDATE "Next Steps" to reflect the current state.\n'
-    .. "- PRESERVE exact file paths, function names, commands and error strings.\n"
-    .. "- Drop items only when they are no longer relevant.\n\n"
-    .. "Reply with the updated checkpoint alone, no preamble.\n\n"
-    .. "Use this EXACT format:\n\n"
+Update the existing structured summary with new information. RULES:
+- PRESERVE all existing information from the previous summary
+- ADD new progress, decisions, and context from the new messages
+- UPDATE the Progress section: move items from "In Progress" to "Done" when completed
+- UPDATE "Next Steps" based on what was accomplished
+- PRESERVE exact file paths, function names, and error messages
+- If something is no longer relevant, you may remove it
 
-local LABELS = {
-    user = "user",
-    assistant = "assistant",
-    system = "system",
-    error = "error",
-    compaction = "earlier summary",
-}
+Use this EXACT format:
+
+## Goal
+[Preserve existing goals, add new ones if the task expanded]
+
+## Constraints & Preferences
+- [Preserve existing, add new ones discovered]
+
+## Progress
+### Done
+- [x] [Include previously done items AND newly completed items]
+
+### In Progress
+- [ ] [Current work - update based on progress]
+
+### Blocked
+- [Current blockers - remove if resolved]
+
+## Key Decisions
+- **[Decision]**: [Brief rationale] (preserve all previous, add new)
+
+## Next Steps
+1. [Update based on current state]
+
+## Critical Context
+- [Preserve important context, add new if needed]
+
+Keep each section concise. Preserve exact file paths, function names, and error messages.]]
+
+local PREFIX_PROMPT =
+    [[The messages above are earlier context from an ongoing conversation. Later messages are stored separately and do not need to be reconstructed.
+
+Create a concise checkpoint of the user's request and the progress shown above. This checkpoint will be placed before the later messages so the conversation can continue with the necessary context.
+
+## Original Request
+[What did the user ask for?]
+
+## Progress So Far
+- [Key decisions and work completed in these messages]
+
+## Context Needed to Continue
+- [Information from these messages needed to understand the later work]
+
+Only summarize information explicitly present above. Do not infer or recreate later messages.]]
 
 local M = {}
 
+local function truncate(text, max)
+    if #text <= max then
+        return text
+    end
+    return text:sub(1, max) .. "\n\n[... " .. (#text - max) .. " more characters truncated]"
+end
+
+local function arguments(call)
+    local ok, args = pcall(sys.json.decode, call.arguments, { nulls = false })
+    if not ok or type(args) ~= "table" then
+        return ""
+    end
+    local fields = list.mapped(tables.keys(args), function(name)
+        return name .. "=" .. sys.json.encode(args[name])
+    end)
+    return table.concat(fields, ", ")
+end
+
+local function calls(message)
+    return list.mapped(message.tool_calls or {}, function(call)
+        return call.name .. "(" .. arguments(call) .. ")"
+    end)
+end
+
 function M.transcript(messages)
-    local chunks = {}
-    local budget = MAX_INPUT
-    for index = #messages, 1, -1 do
-        local message = messages[index]
+    local parts = {}
+    for _, message in ipairs(messages) do
         local kind = message.type
-        if kind ~= "context" and not view.transcript_only(kind) then
-            local label = kind == "tool" and message.name or LABELS[kind]
-            local text = tokens.text(message)
+        if kind == "user" or kind == "context" then
+            local text = message.text or ""
             if text:find("%S") then
-                local chunk = "[" .. label .. "] " .. text .. "\n\n"
-                local size = tokens.chars(chunk)
-                if size > budget then
-                    break
-                end
-                budget = budget - size
-                chunks[#chunks + 1] = chunk
+                parts[#parts + 1] = "[User]: " .. text
+            end
+        elseif kind == "assistant" then
+            local reasoning = message.reasoning
+            if reasoning and reasoning:find("%S") then
+                parts[#parts + 1] = "[Assistant thinking]: " .. reasoning
+            end
+            local text = message.text or ""
+            if text:find("%S") then
+                parts[#parts + 1] = "[Assistant]: " .. text
+            end
+            local listed = calls(message)
+            if #listed > 0 then
+                parts[#parts + 1] = "[Assistant tool calls]: " .. table.concat(listed, "; ")
+            end
+        elseif kind == "tool" then
+            local text = message.content or ""
+            if text:find("%S") then
+                parts[#parts + 1] = "[Tool result]: " .. truncate(text, TOOL_RESULT_MAX_CHARS)
+            end
+        elseif kind == "error" then
+            local text = message.text or ""
+            if text:find("%S") then
+                parts[#parts + 1] = "[Error]: " .. text
             end
         end
     end
-    local ordered = {}
-    for index = #chunks, 1, -1 do
-        ordered[#ordered + 1] = chunks[index]
-    end
-    return table.concat(ordered)
+    return table.concat(parts, "\n\n")
 end
 
-function M.generate(messages, previous)
-    local transcript = M.transcript(messages)
-    if not transcript:find("%S") then
-        return nil
+local function retryable(failure)
+    return type(failure) == "table"
+        and failure.kind == "http"
+        and (failure.status == nil or failure.status == 408 or failure.status == 429 or failure.status >= 500)
+end
+
+local function complete(text)
+    local answer, failure
+    for attempt = 1, 2 do
+        answer, failure = model.generate({
+            system = SYSTEM,
+            messages = { { type = "user", text = text } },
+            standalone = true,
+        })
+        if answer or attempt == 2 or not retryable(failure) then
+            break
+        end
+        sys.sleep(1)
     end
-    local instructions, text = PROMPT, transcript
-    if previous then
-        instructions = UPDATE_PROMPT
-        text = "<previous-summary>\n" .. previous .. "\n</previous-summary>\n\n" .. transcript
-    end
-    local answer = model.generate({
-        system = instructions .. FORMAT,
-        messages = { { type = "user", text = text } },
-    })
     if not answer then
-        return nil
+        return nil, failure and tostring(failure.message or failure.kind) or "the model did not answer"
+    end
+    if answer.hit_limit then
+        return nil, "generation hit the token cap and the summary is incomplete"
     end
     local summary = (answer.text or ""):match("^%s*(.-)%s*$")
     if summary == "" then
-        return nil
+        return nil, "the model returned an empty summary"
     end
-    return { summary = summary, usage = answer.usage }
+    return summary, answer.usage
+end
+
+local function history_prompt(messages, previous)
+    local text = "<conversation>\n" .. M.transcript(messages) .. "\n</conversation>\n\n"
+    if previous then
+        text = text .. "<previous-summary>\n" .. previous .. "\n</previous-summary>\n\n"
+    end
+    return text .. (previous and UPDATE_PROMPT or PROMPT)
+end
+
+local function prefix_prompt(messages)
+    return "# Conversation\n" .. M.transcript(messages) .. "\n\n# Instructions\n" .. PREFIX_PROMPT
+end
+
+local function summed(left, right)
+    local out = tables.copy(left or {})
+    for name, value in pairs(right or {}) do
+        out[name] = (out[name] or 0) + value
+    end
+    return out
+end
+
+function M.generate(messages, previous, prefix)
+    local summary = "No prior history."
+    local usage
+    if #messages > 0 then
+        local done, spent = complete(history_prompt(messages, previous))
+        if not done then
+            return nil, spent
+        end
+        summary, usage = done, spent
+    end
+    if prefix and #prefix > 0 then
+        local done, spent = complete(prefix_prompt(prefix))
+        if not done then
+            return nil, spent
+        end
+        summary = summary .. "\n\n---\n\n**Turn Context (split turn):**\n\n" .. done
+        usage = summed(usage, spent)
+    end
+    return { summary = summary, usage = usage }
 end
 
 function M.fold(messages, budget, keep_recent, progress)
@@ -125,9 +255,9 @@ function M.fold(messages, budget, keep_recent, progress)
     end
     local files = view.merge_files(view.files_touched(head), carried)
     progress.messages = #head
-    local done = M.generate(head, previous)
+    local done, why = M.generate(head, previous)
     if not done then
-        return nil
+        return nil, why
     end
     local folded = { view.summary_message(done.summary, files) }
     for index = at, #messages do

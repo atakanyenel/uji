@@ -1,5 +1,6 @@
 local class = require("uji.core.class")
 local compactor = require("uji.core.agent.compactor")
+local diagnostics = require("uji.core.diagnostics")
 local context = require("uji.core.context")
 local event = require("uji.core.event")
 local Files = require("uji.core.system.files")
@@ -541,14 +542,21 @@ function Agent:compact(keep)
         previous, carried = first.summary, first.files or {}
         start = cut.from + 1
     end
-    for index = start, cut.compacted do
+    for index = start, cut.history_to do
         earlier[#earlier + 1] = stored[index].message
+    end
+    local prefix
+    if cut.prefix then
+        prefix = {}
+        for index = cut.prefix.from, cut.prefix.to do
+            prefix[#prefix + 1] = stored[index].message
+        end
     end
     local compaction = self:compaction_started(cut.span)
     self:begin()
     self.task = task.spawn_in(self.ctx, function()
         local files = view.merge_files(view.files_touched(earlier), carried)
-        local ok, done = pcall(compactor.generate, earlier, previous)
+        local ok, done, why = pcall(compactor.generate, earlier, previous, prefix)
         if compaction.cancelled then
             return
         end
@@ -561,7 +569,10 @@ function Agent:compact(keep)
             notices.push("compacted " .. cut.span .. " earlier messages")
             event.emit("session_compacted", { count = cut.span })
         else
-            notices.push("could not compact; sending the full context")
+            local reason = ok and tostring(why) or tostring(done)
+            self.skipped_compaction = true
+            diagnostics.report("compact", { text = reason })
+            notices.push("could not compact; sending the full context (" .. reason .. ")")
         end
         self:finish(false)
         self:send_queued()

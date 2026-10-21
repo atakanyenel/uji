@@ -27,7 +27,7 @@ function M.serve(script, opts)
     local summary = opts and opts.summary
     return server.start(function(request)
         if not server.has_tools(request) then
-            local compacting = server.system(request):find("compact", 1, true)
+            local compacting = server.summarising(request)
             local reply = server.text(compacting and "SUMMARY OF EARLIER WORK" or "Title")
             if compacting and summary then
                 return server.after(summary, reply)

@@ -139,6 +139,7 @@ function Parts:answer(calls)
         tool_calls = calls,
         usage = total > 0 and usage or nil,
         replay = self.replay,
+        hit_limit = self.hit_limit or nil,
     }
 end
 

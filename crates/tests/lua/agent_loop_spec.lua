@@ -20,7 +20,7 @@ end
 
 local function compacted(mock)
     for _, request in ipairs(mock.requests) do
-        if server.system(request):find("You compact coding sessions", 1, true) == 1 then
+        if server.summarising(request) then
             return true
         end
     end
@@ -336,6 +336,31 @@ it("sends a message that waits for compaction once it is done", { timeout = 20 }
     local sent = turns[1].body.messages
     assert.equal("go", sent[#sent].content)
     assert.equal("done", agent.last_answer(messages))
+end)
+
+it("says why a compaction failed and gives it the model's output budget", { timeout = 20 }, function()
+    local compacting = {}
+    local mock = server.start(function(request)
+        if server.summarising(request) then
+            compacting[#compacting + 1] = request.body
+            return server.status(500, "the summariser broke")
+        end
+        return server.text("done")
+    end)
+    local history = {}
+    for turn = 0, 5 do
+        history[#history + 1] = { type = "user", text = "question " .. turn }
+        history[#history + 1] = { type = "assistant", text = string.rep("answer ", 400) }
+    end
+    local notices = {}
+    uji.on("notice", function(notice)
+        notices[#notices + 1] = notice.text
+    end)
+    agent.run({ url = mock.url, context = 4000, history = history })
+    assert.is_true(#compacting >= 1)
+    local joined = table.concat(notices, "\n")
+    assert.is_true(joined:find("could not compact", 1, true) ~= nil, joined)
+    assert.is_true(joined:find("the summariser broke", 1, true) ~= nil, joined)
 end)
 
 it("compacts a conversation that no longer leaves room for its reply", { timeout = 20 }, function()
