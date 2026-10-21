@@ -20,6 +20,7 @@ local Stream = require("uji.core.ui.stream")
 local Suggest = require("uji.core.ui.views.suggest")
 local sys = require("uji.sys")
 local task = require("uji.core.task")
+local Jobs = require("uji.core.ui.jobs")
 local Theme = require("uji.core.ui.theme")
 
 local FRAME = 1 / 60
@@ -68,6 +69,7 @@ function Ui:init()
     self.keymap = Keymap()
     self.theme = Theme()
     self.composer = Composer(self.theme)
+    self.jobs = Jobs(self)
     self.sends, self.sending = task.sequence()
     self.stream = Stream()
     self.reasoning = ""
@@ -95,6 +97,18 @@ function Ui:invalidate()
     if not self.dirty.settled then
         self.dirty:resolve()
     end
+end
+
+function Ui:claims(placement)
+    for _, declared in ipairs(self.toolbars) do
+        local found = list.found(declared.items, function(item)
+            return item ~= nil and item.placement == placement
+        end)
+        if found then
+            return true
+        end
+    end
+    return false
 end
 
 function Ui:toolbar(items)
@@ -184,6 +198,10 @@ end
 
 function Ui:working()
     return app.agent ~= nil and app.agent:working()
+end
+
+function Ui:busy()
+    return self:working() or self.jobs:busy()
 end
 
 function Ui:compacting()
@@ -481,6 +499,9 @@ function Ui:normal_key(chord)
     if self:compacting() and keys.is_char(chord) then
         return
     end
+    if self.jobs:key(chord, self.composer:text() ~= "") then
+        return
+    end
     if key == "esc" then
         if self:compacting() or self.composer:text() == "" then
             self:interrupt()
@@ -530,8 +551,8 @@ function Ui:key(chord)
     self:invalidate()
 end
 
-function Ui:flash(message, seconds)
-    local shown = { text = message }
+function Ui:flash(message, seconds, kind)
+    local shown = { text = message, kind = kind }
     self.flashed = shown
     self:invalidate()
     task.spawn(function()
@@ -634,15 +655,16 @@ function Ui:read()
 end
 
 function Ui:tick()
-    if self.ticking or not self:working() then
+    if self.ticking or not self:busy() then
         return
     end
     self.ticking = task.spawn(function()
-        while self:working() do
+        while self:busy() do
             sys.sleep(self.theme.tokens.limits.spinner_interval)
-            if self:working() then
+            if self:busy() then
                 self.activity = self:current_activity()
                 self.compaction = self:current_compaction()
+                self.jobs:refresh()
                 self:invalidate()
             end
         end
@@ -695,7 +717,7 @@ end
 
 function Ui:take_notices()
     for _, notice in ipairs(notices.take()) do
-        self:flash(notice.text, notice.seconds)
+        self:flash(notice.text, notice.seconds, notice.kind)
     end
 end
 
@@ -732,9 +754,13 @@ function Ui:listen()
         tool_progress = function(payload)
             self:progress(payload)
         end,
-        status_changed = function()
+        status_changed = function(payload)
             self.activity = self:current_activity()
             self.compaction = self:current_compaction()
+            self.jobs:refresh()
+            if payload.finished then
+                self.jobs:finished(payload.finished)
+            end
             self:tick()
             self:invalidate()
         end,

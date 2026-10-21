@@ -30,19 +30,22 @@ function Job:init(spec)
     self.started = sys.os.clock()
     self.state = "running"
     self.seen = 0
-    self.last = ""
+    self.printed = 0
     ito.observable(self)
 end
 
 function Job:line(text)
     self.capture:push(text)
-    self.last = text
+    self.printed = self.printed + 1
     if self.progress then
         self.progress(text)
     end
 end
 
 function Job:tail()
+    if self.printed == 0 then
+        return ""
+    end
     return table.concat(self.capture:since(self.capture.total - TAIL), "\n")
 end
 
@@ -114,6 +117,7 @@ end
 local function kill(job, state)
     job.state = state
     job.handle.stop()
+    event.emit("status_changed", {})
 end
 
 local function wake()
@@ -132,6 +136,7 @@ local function adopt(job, seconds)
     arm(job, math.min(seconds, LONGEST), function()
         kill(job, "timed out")
     end)
+    event.emit("status_changed", {})
 end
 
 local function detach(job, waited)
@@ -161,6 +166,8 @@ local function finish(job, code, reason)
         job.state = reason == "stopped" and "stopped" or "finished"
     end
     local text = job.capture:finish()
+    job.ended = sys.os.clock()
+    event.emit("status_changed", { finished = job.id and job })
     if job.done then
         local done = job.done
         job.done = nil
