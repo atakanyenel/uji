@@ -44,7 +44,7 @@ Returns a table with `used`, the tokens the conversation takes up, `window`,
 the model's context size when uji knows it, and `usable`, the tokens the
 conversation may use before uji compacts it. `used` is what the provider
 counted for its last reply plus an estimate of the messages after it, from the
-last compaction on.
+last compaction on, or the estimate of those messages when that is larger.
 
 ```lua
 local context = uji.session.context()

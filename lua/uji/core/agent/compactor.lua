@@ -2,8 +2,6 @@ local list = require("uji.utils.list")
 local model = require("uji.core.model")
 local sys = require("uji.sys")
 local tables = require("uji.core.tables")
-local tokens = require("uji.core.agent.tokens")
-local view = require("uji.core.agent.view")
 
 local TOOL_RESULT_MAX_CHARS = 2000
 
@@ -236,34 +234,6 @@ function M.generate(messages, previous, prefix)
         usage = summed(usage, spent)
     end
     return { summary = summary, usage = usage }
-end
-
-function M.fold(messages, budget, keep_recent, progress)
-    if tokens.messages(messages) < model.usable(budget) then
-        return nil
-    end
-    local at = view.cut_index(messages, keep_recent)
-    if not at then
-        return nil
-    end
-    local carried = view.previous_files(messages[1])
-    local previous = view.previous_summary(messages[1])
-    local skip = previous and 1 or 0
-    local head = {}
-    for index = 1 + skip, at - 1 do
-        head[#head + 1] = messages[index]
-    end
-    local files = view.merge_files(view.files_touched(head), carried)
-    progress.messages = #head
-    local done, why = M.generate(head, previous)
-    if not done then
-        return nil, why
-    end
-    local folded = { view.summary_message(done.summary, files) }
-    for index = at, #messages do
-        folded[#folded + 1] = messages[index]
-    end
-    return { messages = folded, summary = done.summary, usage = done.usage, count = #head }
 end
 
 return M

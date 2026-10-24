@@ -3,6 +3,7 @@ local json = require("uji.utils.json")
 local model = require("uji.core.model")
 local sys = require("uji.sys")
 local text = require("ito").text
+local view = require("uji.core.agent.view")
 
 local RETRY_ATTEMPTS = 5
 local RETRY_INITIAL = 2
@@ -134,10 +135,12 @@ function Loop:generate()
 end
 
 function Loop:compact()
-    local folded = self.agent:fold(self.messages)
-    if folded then
-        self.messages = folded.messages
-        self.agent:compacted(folded.usage, folded.count)
+    local agent = self.agent
+    if agent.skipped_compaction or not agent:needs_compaction() then
+        return
+    end
+    if agent:fold(agent:keep_recent_now()) then
+        self.messages = view.build(agent.session:entries())
     end
 end
 

@@ -20,57 +20,6 @@ function M.summary_message(summary, files)
     return { type = "user", text = text }
 end
 
-function M.previous_summary(message)
-    if not message or message.type ~= "user" then
-        return nil
-    end
-    local text = message.text
-    if text:sub(1, #SUMMARY_HEADER) ~= SUMMARY_HEADER then
-        return nil
-    end
-    local body = text:sub(#SUMMARY_HEADER + 1)
-    local head = body
-    local at = 1
-    while true do
-        local found = body:find(FILES_HEADER, at, true)
-        if not found then
-            break
-        end
-        head = body:sub(1, found - 1)
-        at = found + 1
-    end
-    return head:match("^%s*(.-)%s*$")
-end
-
-function M.previous_files(message)
-    if not message or message.type ~= "user" then
-        return {}
-    end
-    local text = message.text
-    local last
-    local at = 1
-    while true do
-        local found = text:find(FILES_HEADER, at, true)
-        if not found then
-            break
-        end
-        last = found
-        at = found + 1
-    end
-    if not last then
-        return {}
-    end
-    local listed = text:sub(last + #FILES_HEADER):match("^([^\n]*)") or ""
-    local out = {}
-    for part in listed:gmatch("[^,]+") do
-        local trimmed = part:match("^%s*(.-)%s*$")
-        if trimmed ~= "" then
-            out[#out + 1] = trimmed
-        end
-    end
-    return out
-end
-
 function M.files_touched(messages)
     local out, seen = {}, {}
     for _, message in ipairs(messages) do

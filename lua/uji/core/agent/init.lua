@@ -122,6 +122,7 @@ function Agent:finish(turn)
     event.emit("tool_progress", {})
     event.emit("status_changed", {})
     if turn then
+        self.skipped_compaction = nil
         event.emit("turn_finished", {})
     end
 end
@@ -269,14 +270,6 @@ end
 function Agent:restarted(attempt, of, wait, reason)
     self:clear_stream()
     notices.push(string.format("request failed (%s), retrying in %ds (%d/%d)", reason, math.max(wait, 1), attempt, of))
-end
-
-function Agent:compacted(spent, count)
-    if spent then
-        self.session:add_cost(spent)
-    end
-    notices.push("context filled up mid-turn; compacted to continue")
-    event.emit("session_compacted", { count = count })
 end
 
 function Agent:usage(spent)
@@ -492,46 +485,17 @@ function Agent:keep_recent_now()
     return math.max(math.min(self:keep_recent(), math.floor(used / KEEP_CEILING_FRACTION)), 1)
 end
 
-function Agent:fold(messages)
-    local budget = self:budget()
-    if not budget then
-        return nil
-    end
-    local compaction = self:compaction_started()
-    local folded = compactor.fold(messages, budget, self:keep_recent(), compaction)
-    self:compaction_finished()
-    return folded
-end
-
-function Agent:compact_if_needed()
-    if self.skipped_compaction then
-        self.skipped_compaction = nil
-        return false
-    end
+function Agent:needs_compaction()
     if not context.compaction.enabled or loop_provider() then
         return false
     end
     local budget = self:budget()
-    if not budget or self.session:used_tokens() < model.usable(budget) then
-        return false
-    end
-    if self:compact(self:keep_recent()) then
-        return true
-    end
-    notices.push(string.format("context is over the %d token budget but the latest turn cannot be compacted", model.usable(budget)))
-    return false
+    return budget ~= nil and self.session:used_tokens() >= model.usable(budget)
 end
 
-function Agent:compact(keep)
-    local provider = loop_provider()
-    if provider then
-        return false, provider.name .. " keeps its own context"
-    end
-    if self:working() then
-        return false, "a turn is running"
-    end
+function Agent:fold(keep)
     local stored = self.session:entries()
-    local cut = view.find_cut(stored, keep or self:keep_recent_now())
+    local cut = view.find_cut(stored, keep or self:keep_recent())
     if not cut then
         return false, "nothing to compact yet"
     end
@@ -553,27 +517,57 @@ function Agent:compact(keep)
         end
     end
     local compaction = self:compaction_started(cut.span)
+    local files = view.merge_files(view.files_touched(earlier), carried)
+    local ok, done, why = pcall(compactor.generate, earlier, previous, prefix)
+    if compaction.cancelled then
+        return false
+    end
+    self:compaction_finished()
+    if not (ok and done) then
+        local reason = ok and tostring(why) or tostring(done)
+        self.skipped_compaction = true
+        diagnostics.report("compact", { text = reason })
+        notices.push("could not compact; sending the full context (" .. reason .. ")")
+        return false
+    end
+    if done.usage then
+        self.session:add_cost(done.usage)
+    end
+    self:append({ type = "compaction", summary = done.summary, through = cut.through, files = files })
+    notices.push("compacted " .. cut.span .. " earlier messages")
+    event.emit("session_compacted", { count = cut.span })
+    return true
+end
+
+function Agent:compact_if_needed()
+    if self.skipped_compaction then
+        return false
+    end
+    if not self:needs_compaction() then
+        return false
+    end
+    if self:compact(self:keep_recent()) then
+        return true
+    end
+    notices.push(string.format("context is over the %d token budget but the latest turn cannot be compacted", model.usable(self:budget())))
+    return false
+end
+
+function Agent:compact(keep)
+    local provider = loop_provider()
+    if provider then
+        return false, provider.name .. " keeps its own context"
+    end
+    if self:working() then
+        return false, "a turn is running"
+    end
+    local recent = keep or self:keep_recent_now()
+    if not view.find_cut(self.session:entries(), recent) then
+        return false, "nothing to compact yet"
+    end
     self:begin()
     self.task = task.spawn_in(self.ctx, function()
-        local files = view.merge_files(view.files_touched(earlier), carried)
-        local ok, done, why = pcall(compactor.generate, earlier, previous, prefix)
-        if compaction.cancelled then
-            return
-        end
-        self:compaction_finished()
-        if ok and done then
-            if done.usage then
-                self.session:add_cost(done.usage)
-            end
-            self:append({ type = "compaction", summary = done.summary, through = cut.through, files = files })
-            notices.push("compacted " .. cut.span .. " earlier messages")
-            event.emit("session_compacted", { count = cut.span })
-        else
-            local reason = ok and tostring(why) or tostring(done)
-            self.skipped_compaction = true
-            diagnostics.report("compact", { text = reason })
-            notices.push("could not compact; sending the full context (" .. reason .. ")")
-        end
+        self:fold(recent)
         self:finish(false)
         self:send_queued()
     end)

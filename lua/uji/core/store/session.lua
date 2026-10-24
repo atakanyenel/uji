@@ -9,6 +9,7 @@ local tokens = require("uji.core.agent.tokens")
 
 local PLACEHOLDERS = { [""] = true, untitled = true, new = true, resumed = true }
 local PAGE = 200
+local ESTIMATES = setmetatable({}, { __mode = "k" })
 
 local RECENT =
     "SELECT id, seq, time_created, data FROM messages WHERE session_id = ? AND seq >= coalesce((SELECT max(seq) FROM messages WHERE session_id = ? AND type = 'compaction'), 0) ORDER BY seq"
@@ -95,6 +96,7 @@ function Session:older(limit)
         return false
     end
     self.stored = list.extended(earlier, self.stored)
+    ESTIMATES[self] = nil
     return true
 end
 
@@ -123,6 +125,7 @@ function Session:append(message)
         db:exec("UPDATE sessions SET time_updated = ? WHERE id = ?", { now, self.id })
     end)
     self.stored = list.appended(stored, entry)
+    ESTIMATES[self] = nil
     event.emit("message_appended", { type = message.type, text = tokens.text(message) })
     if not ok then
         return entry, "failed to persist " .. message.type .. " message: " .. sys.message(err)
@@ -184,13 +187,18 @@ end
 function Session:used_tokens()
     local stored = self:entries()
     local at = tokens.last_compaction(stored) or 0
+    local estimate = ESTIMATES[self]
+    if not estimate then
+        estimate = tokens.total(stored)
+        ESTIMATES[self] = estimate
+    end
     for index = #stored, at + 1, -1 do
         local spent = stored[index].message.usage
         if spent then
-            return context_tokens(spent) + tokens.after(stored, stored[index].seq)
+            return math.max(context_tokens(spent) + tokens.after(stored, stored[index].seq), estimate)
         end
     end
-    return tokens.total(stored)
+    return estimate
 end
 
 Session.encode = encode

@@ -89,3 +89,12 @@ it("does not count a usage from before a compaction", function()
     session:append({ type = "compaction", summary = string.rep("s", 400), files = {} })
     assert.equal(100, session:used_tokens(), "the summary and what follows it are what is left")
 end)
+
+it("counts the messages a folded prompt left behind", function()
+    local session = sessions()
+    for _ = 1, 4 do
+        session:append({ type = "tool", tool_call_id = "c", name = "run_command", content = string.rep("x", 40000) })
+    end
+    session:append({ type = "assistant", text = "done", usage = { input = 500, output = 10 } })
+    assert.equal(40001, session:used_tokens(), "a folded prompt does not shrink the session")
+end)

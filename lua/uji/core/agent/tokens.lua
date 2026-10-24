@@ -74,12 +74,4 @@ function M.total(stored)
     return total
 end
 
-function M.messages(messages)
-    local total = 0
-    for _, message in ipairs(messages) do
-        total = total + M.weigh(message)
-    end
-    return total
-end
-
 return M

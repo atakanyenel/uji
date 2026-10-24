@@ -69,8 +69,9 @@ function Jobs:busy()
 end
 
 function Jobs:show()
-    self.all, self.dropped, self.hint, self.selected = true, {}, nil, nil
+    self.all, self.dropped, self.hint = true, {}, nil
     self:refresh()
+    self.selected = self.rows[1] and self.rows[1].id
 end
 
 function Jobs:close()

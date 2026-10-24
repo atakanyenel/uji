@@ -185,6 +185,13 @@ it("compacts a turn that outgrows its window mid turn", { timeout = 20 }, functi
     agent.allow_all()
     local messages = run(mock.url, { context = 4000 })
     assert.is_true(compacted(mock))
+    local found
+    for _, entry in ipairs(app.session:entries()) do
+        if entry.message.type == "compaction" then
+            found = true
+        end
+    end
+    assert.is_true(found, "the fold a turn makes is written to the session")
     local turns = mock:turns()
     assert.equal(2, #turns)
     local folded = turns[2].body.messages[2].content
@@ -460,12 +467,11 @@ it("moves the spinner while the summary is written", { timeout = 20 }, function(
     assert.is_not_equal(first, line(), "the compaction line never moved")
 end)
 
-it("shows the compaction a turn folds on its own", { timeout = 20 }, function()
+it("folds the session and keeps what it wrote", { timeout = 20 }, function()
     summarising()
     seeded()
-    local messages = require("uji.core.agent.view").build(app.session:entries())
     uji.task.spawn(function()
-        app.agent:fold(messages)
+        app.agent:fold(app.agent:keep_recent())
     end)
     wait.eventually(function()
         return app.agent:compacting()
@@ -474,6 +480,8 @@ it("shows the compaction a turn folds on its own", { timeout = 20 }, function()
     wait.eventually(function()
         return not app.agent:compacting()
     end)
+    local stored = app.session:entries()
+    assert.equal("compaction", stored[#stored].message.type, "a fold writes the summary to the session")
 end)
 
 it("does not remember a stopped manual compaction", { timeout = 20 }, function()

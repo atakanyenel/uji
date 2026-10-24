@@ -19,8 +19,9 @@ model stop starts no turn.
 
 The model reads a job's output with the `job_output` tool and stops it with
 `stop_job`. `/jobs` lists the jobs under the input, running ones first, and
-keeps them there until you type or press Esc. Pick one with ↑; Enter opens its
-output, and `x` stops a running job or drops a finished one.
+keeps them there until you type or press Esc. It picks the first job; Enter
+opens its output, ↑ and ↓ pick another, and `x` stops a running job or drops a
+finished one.
 
 A background job stops after 30 minutes, or after the `timeout` the model gives
 with `run_in_background`, and never runs longer than two hours. At most 8 jobs
@@ -49,8 +50,9 @@ id is running.
 
 ## uji.jobs.show()
 
-Lists the jobs under the input, running ones first and then the newest. `/jobs`
-runs this, and it notices when there are no jobs at all.
+Lists the jobs under the input, running ones first and then the newest, and
+picks the first. `/jobs` runs this, and it notices when there are no jobs at
+all.
 
 ## uji.jobs.configure(opts)
 
