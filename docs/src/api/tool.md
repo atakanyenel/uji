@@ -18,10 +18,11 @@ Registers a tool the model can call, or replaces the tool with the same name.
 | `parameters` | table | no | A JSON Schema for the arguments, written as a Lua table. |
 | `run` | function | yes | Runs the call. See below. |
 | `resolve` | function | no | Receives the arguments before the policy is checked and returns the ones to use from then on, or `nil` and an error message, which becomes the result. |
-| `subject` | string or function | no | What policy rules match against, and what the transcript and approval question show. A function receives the arguments and returns a string. The default is the tool's name. |
+| `subject` | string or function | no | What policy rules match against, and what the transcript and approval question show unless `display.detail` is set. A function receives the arguments and returns a string. The default is the tool's name. |
 | `policy` | string | no | `"allow"`, `"ask"` or `"deny"`. Used when no policy rule matches. |
 | `path` | boolean | no | `true` when the subject is a file path, so policy rules match it the way they match the file tools. |
 | `display.label` | string | no | The name the transcript shows for a call, such as `"Read"`, followed by the subject in brackets. The default is the tool's name. |
+| `display.detail` | function | no | Receives the arguments and returns what the transcript shows in brackets after the label, in place of the subject. The approval question shows it too. |
 | `display.question` | string | no | The title of the approval question. |
 | `display.preview` | function | no | Receives the arguments and returns the change the call would make, as [`uji.diff`](#ujidiffold-new-path) gives it. The approval question shows it. |
 
@@ -68,8 +69,9 @@ uji.tool.add("branch", {
 Describes a tool that uji does not run itself, such as one that a provider's
 [own loop](provider.md) runs, so the transcript and the approval question can
 name its calls. The model is never offered it. `opts` takes `label`, `subject`,
-`question` and `preview`, which mean the same as `display.label`, `subject`,
-`display.question` and `display.preview` in `uji.tool.add`.
+`question`, `preview` and `detail`, which mean the same as `display.label`,
+`subject`, `display.question`, `display.preview` and `display.detail` in
+`uji.tool.add`.
 
 ```lua
 uji.tool.display("Edit", {

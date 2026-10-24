@@ -66,7 +66,7 @@ function M.display(name, opts)
     return M.displays:add(name, {
         name = name,
         subject = opts.subject,
-        display = { label = opts.label, question = opts.question, preview = opts.preview },
+        display = { label = opts.label, question = opts.question, preview = opts.preview, detail = opts.detail },
     })
 end
 
@@ -136,17 +136,22 @@ function M.specs(only)
 end
 
 function M.detail(tool, args)
-    if tool == nil or tool.subject == nil then
+    if tool == nil then
         return nil
     end
-    return Any(tool.subject):call(args)
+    local display = tool.display or {}
+    local handler = display.detail or tool.subject
+    if handler == nil then
+        return nil
+    end
+    return Any(handler):call(args)
 end
 
 function M.subject(tool, name, args)
     if tool == nil or tool.subject == nil then
         return name
     end
-    return M.detail(tool, args) or ""
+    return Any(tool.subject):call(args) or ""
 end
 
 return M

@@ -1,6 +1,7 @@
 local agent = require("support.agent")
 local app = require("uji.core.app")
 local sandbox = require("support.sandbox")
+local screen = require("support.ui")
 local tool = require("uji.core.tool")
 local server = require("support.server")
 local sys = require("uji.sys")
@@ -99,6 +100,31 @@ it("pages numbered lines from read_file and refuses what it cannot read", { time
         numbered({ "outside" }, 1),
         "error: `path` is required and must be a non-empty string",
     }, results)
+end)
+
+it("names the lines a read covers, so two reads of one file differ", { size = { 100, 40 }, timeout = 20 }, function()
+    sandbox.file("notes.txt", "one\ntwo\nthree\nfour\nfive\nsix\n")
+    local read = tool.get("read_file")
+    assert.equal("notes.txt:3-4", tool.detail(read, { path = "notes.txt", offset = 3, limit = 2 }))
+    assert.equal("notes.txt:3", tool.detail(read, { path = "notes.txt", offset = 3 }))
+    assert.equal("notes.txt", tool.subject(read, "read_file", { path = "notes.txt", offset = 3 }))
+    local round = 0
+    local mock = server.start(function(request)
+        if server.has_tools(request) then
+            round = round + 1
+            if round == 1 then
+                return server.tool_calls(0, {
+                    { "read_file", '{"path":"notes.txt","offset":1,"limit":2}' },
+                    { "read_file", '{"path":"notes.txt","offset":4,"limit":2}' },
+                })
+            end
+        end
+        return server.text("done")
+    end)
+    agent.allow_all()
+    agent.run({ url = mock.url })
+    assert.truthy(screen.find("⏺ Read(notes.txt:1-2)"))
+    assert.truthy(screen.find("⏺ Read(notes.txt:4-5)"))
 end)
 
 it("reads and edits the one file a * matches and lists the matches otherwise", { timeout = 20 }, function()

@@ -279,6 +279,22 @@ it("selects a job below the input, opens it, stops it and drops its row", { size
     assert.is_not_nil(screen.find("✗ job 1"), "/jobs brings a dropped row back")
 end)
 
+it("opens a job with a tap", { size = { 80, 12 }, timeout = 10 }, function()
+    uji.jobs.configure({ wake = false })
+    jobs.start({ command = "sleep 5", cwd = sandbox.work, background = true })
+    eventually(function()
+        return screen.find("job 1  sleep 5") ~= nil
+    end)
+    local row = screen.find("job 1  sleep 5")
+    ui:mouse({ kind = "down", button = "left", row = row, col = 6 })
+    ui:mouse({ kind = "up", button = "left", row = row, col = 6 })
+    screen.pump()
+    assert.is_true(ui.modal ~= nil, "a tap opens the job's output")
+    assert.equal(1, ui.jobs.selected)
+    screen.press("esc")
+    assert.is_nil(ui.modal, "esc closes it")
+end)
+
 it("says where a finished job went", { size = { 80, 12 }, timeout = 10 }, function()
     uji.jobs.configure({ wake = false })
     jobs.start({ command = "echo hi", cwd = sandbox.work, background = true })

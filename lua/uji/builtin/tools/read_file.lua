@@ -55,6 +55,20 @@ local function picture(path)
     }
 end
 
+local function detail(args)
+    local path = field.text(args, "path")
+    local offset = field.count(args, "offset")
+    local limit = field.count(args, "limit")
+    if offset == nil and limit == nil then
+        return path
+    end
+    local first = offset or 1
+    if limit == nil then
+        return string.format("%s:%d", path, first)
+    end
+    return string.format("%s:%d-%d", path, first, first + limit - 1)
+end
+
 uji.tool.add("read_file", {
     description = "Read a text file and return its contents with 1-based line numbers prefixed as `NNN| `. "
         .. "Read a file before editing it so `edit_file` snippets match exactly. Long files come back "
@@ -90,6 +104,7 @@ uji.tool.add("read_file", {
     display = {
         label = "Read",
         question = "Would you like to allow uji to `read_file`?",
+        detail = detail,
     },
     run = function(args)
         local missing = field.missing(args, "path")
