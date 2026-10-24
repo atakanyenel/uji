@@ -68,6 +68,12 @@ M.ui = {
             end,
         }
     end,
+    status = function(content)
+        if not (ito.is_view(content) or check.callable(content)) then
+            error("uji.ui.status needs a view, or a function that returns one", 2)
+        end
+        return ui:status(content)
+    end,
     size = function()
         if ui.screen then
             return ui.screen:size()

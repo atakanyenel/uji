@@ -1,4 +1,5 @@
 local app = require("uji.core.app")
+local check = require("uji.core.check")
 local host = require("uji.core.ui.host")
 local ito = require("ito")
 local jobs = require("uji.core.jobs")
@@ -10,8 +11,15 @@ local CROWDED = 80
 
 return ito.view(function()
     local ui = host.Host.current
+    local shown = ui.status_line
+    if shown ~= nil then
+        if check.callable(shown) then
+            return shown()
+        end
+        return shown
+    end
     local session = app.session
-    if not session or ui:claims(ito.ToolbarPlacement.bottom_bar) then
+    if not session then
         return nil
     end
     local ctx = ito.theme()

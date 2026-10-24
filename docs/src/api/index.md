@@ -45,6 +45,7 @@ Every function lives under the global `uji` table. A function that finishes late
 | Name | Does |
 |---|---|
 | [`uji.ui.toolbar(items)`](ui.md#ujiuitoolbaritems) | Declares toolbar items on the screen and returns a handle that removes them. |
+| [`uji.ui.status(content)`](ui.md#ujiuistatuscontent) | Draws a view as the status line and returns a handle that puts the built-in line back. |
 | [`uji.ui.size()`](ui.md#ujiuisize) | Returns the width and height of the terminal. |
 | [`uji.ui.select(opts, on_done)`](ui.md#ujiuiselectopts-on_done) | Shows a list to choose from. |
 | [`uji.ui.pick(opts, on_done)`](ui.md#ujiuipickopts-on_done) | Shows a fuzzy finder with a preview pane. |

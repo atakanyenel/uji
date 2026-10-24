@@ -51,6 +51,25 @@ The branch name sits at the right end of the row above the input, and it
 redraws when the job sets `branch.value`, as
 [State](../ito/state.md#itostateinitial) describes.
 
+## uji.ui.status(content)
+
+Draws `content` as uji's status line and gives back a handle. `content` is an
+[ito view](../ito/views.md) or a function that returns one. Bottom bar toolbar
+items draw under it.
+
+| Handle | Meaning |
+|---|---|
+| `handle:remove()` | Puts uji's status line back, and returns `true` if `content` was shown. |
+
+Raises an error when `content` is neither a view nor a function.
+
+```lua
+local bar = uji.ui.status(function()
+  return ito.Text(uji.session.info().short_directory)
+end)
+bar:remove()
+```
+
 ## uji.ui.size()
 
 Returns the width and height of the terminal in cells, or nothing when the

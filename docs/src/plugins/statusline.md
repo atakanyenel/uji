@@ -1,11 +1,9 @@
 # statusline
 
-Deprecated: uji draws its own status line now, with the directory, model,
-reasoning effort, running jobs and context. The views below still work for
+Deprecated: uji draws its own status line now. The views below still work for
 custom bars.
 
-Views for status lines. `setup` declares the default bar as a
-[`bottom_bar` item](../ito/toolbars.md), with the directory, model, reasoning
+`setup` draws the default bar as uji's status line: directory, model, reasoning
 effort, context use, tokens, cache hit rate and turns. Calling it again
 replaces the bar.
 
@@ -54,12 +52,11 @@ local Branch = ito.view(function()
   return branch.value ~= "" and ito.Text(branch.value):foreground(ito.theme().colors.accent)
 end)
 
+uji.ui.status(statusline.Bar({ statusline.Cwd(), Branch(), ito.Spacer(), statusline.Context() }))
+
 uji.ui.toolbar({
   ito.ToolbarItem(ito.ToolbarPlacement.keyboard, function()
     return statusline.Bar({ statusline.Model(), ito.Spacer(), statusline.Effort() })
-  end),
-  ito.ToolbarItem(ito.ToolbarPlacement.bottom_bar, function()
-    return statusline.Bar({ statusline.Cwd(), Branch(), ito.Spacer(), statusline.Context() })
   end),
 })
 ```

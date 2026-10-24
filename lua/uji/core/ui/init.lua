@@ -99,16 +99,19 @@ function Ui:invalidate()
     end
 end
 
-function Ui:claims(placement)
-    for _, declared in ipairs(self.toolbars) do
-        local found = list.found(declared.items, function(item)
-            return item ~= nil and item.placement == placement
-        end)
-        if found then
+function Ui:status(content)
+    self.status_line = content
+    self:invalidate()
+    return {
+        remove = function()
+            if self.status_line ~= content then
+                return false
+            end
+            self.status_line = nil
+            self:invalidate()
             return true
-        end
-    end
-    return false
+        end,
+    }
 end
 
 function Ui:toolbar(items)
