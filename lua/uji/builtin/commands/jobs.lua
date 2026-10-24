@@ -1,6 +1,6 @@
 uji.command.add("jobs", {
-    desc = "list background jobs and stop one",
+    desc = "list the background jobs under the input",
     handler = function()
-        uji.jobs.pick()
+        uji.jobs.show()
     end,
 })

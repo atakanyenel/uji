@@ -22,7 +22,7 @@ local Root = ito.view(function(props)
         ito.SelectionHighlight(),
         Flash():align(ito.Alignment.top_trailing),
     })
-    return presentations.backdrop(root, ito.theme())
+    return presentations.backdrop(root:opaque(), ito.theme())
 end)
 
 function M.frame(ui)

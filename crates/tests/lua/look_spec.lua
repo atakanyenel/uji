@@ -141,7 +141,7 @@ describe("the default look", function()
     it("draws the running jobs below the input", { size = { 80, 12 } }, function()
         ui.jobs.rows = {
             { id = 2, name = "job 2", detail = "npm run build", elapsed = 12, running = true },
-            { id = 1, name = "job 1", detail = "pytest -q", elapsed = 64 },
+            { id = 1, name = "job 1", detail = "pytest -q", elapsed = 64, failed = true },
         }
         ui.jobs.selected = 2
         look("jobs")

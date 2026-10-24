@@ -10,11 +10,18 @@ local Select = require("uji.core.ui.views.select")
 local sys = require("uji.sys")
 local ui = require("uji.core.ui")
 
-local CURSOR = "\226\150\136"
 local MASK = "\226\128\162"
 
 local function has(text, part)
     return text:find(part, 1, true) ~= nil
+end
+
+local function cursor()
+    for _, run in ipairs(screen.runs()) do
+        if run.bg == "White" then
+            return run
+        end
+    end
 end
 
 local function any(rows, part)
@@ -57,11 +64,32 @@ local function copied_to()
 end
 
 describe("the screen", function()
-    it("draws the draft with the cursor in it", { size = { 40, 8 } }, function()
+    it("draws the draft with the cursor over its letter", { size = { 40, 8 } }, function()
         screen.typing("hello")
         screen.press("left")
         screen.press("left")
-        assert.is_true(has(screen.screen(), "hel" .. CURSOR .. "lo"), "the draft and its cursor should be on screen")
+        local run = cursor()
+        assert.equal("l", run and run.text, "the cursor covers the letter it sits on")
+        assert.is_true(has(screen.screen(), "hello"), "the whole draft is still drawn")
+    end)
+
+    it("keeps the line break under the cursor", { size = { 40, 8 } }, function()
+        ui.composer:set("one\ntwo")
+        screen.press("up")
+        local run = cursor()
+        assert.equal(" ", run and run.text, "the cursor sits past the end of the first line")
+        local first = screen.find("one")
+        local second = screen.find("two")
+        assert.is_not_nil(first, "the first line is drawn")
+        assert.is_not_nil(second, "the second line keeps its own line")
+        assert.is_true(second > first, "the second line stays under the first")
+    end)
+
+    it("draws the cursor over a wide letter", { size = { 40, 8 } }, function()
+        ui.composer:set("你a")
+        ui.composer.line.cursor = 0
+        local run = cursor()
+        assert.equal("你", run and run.text, "the cursor takes both cells of a wide letter")
     end)
 
     it("shows no characters in a hidden prompt", { size = { 40, 10 } }, function()
@@ -79,7 +107,7 @@ describe("the screen", function()
             end
         end
         assert.is_false(has(masked, "2"))
-        assert.is_true(has(text, CURSOR), "the cursor should still be drawn")
+        assert.is_not_nil(cursor(), "the cursor should still be drawn")
     end)
 
     it("draws the items and the query of a select", { size = { 40, 12 } }, function()
@@ -89,7 +117,8 @@ describe("the screen", function()
         assert.is_true(has(text, "pick one"), "title missing")
         assert.is_true(has(text, "alpha"), "the matching item is missing")
         assert.is_false(has(text, "beta"), "a filtered item is still drawn")
-        assert.is_true(has(text, "al" .. CURSOR), "the query and cursor are missing")
+        assert.is_true(has(text, "al"), "the query is missing")
+        assert.is_not_nil(cursor(), "the query keeps its cursor")
     end)
 
     it("draws an ask as numbered choices with a row to write your own answer", { size = { 70, 20 } }, function()
@@ -413,7 +442,6 @@ describe("the screen", function()
         app.agent:compaction_started(42)
         local rows = trimmed(screen.rows(true))
         assert.is_true(any(rows, "Compacting the conversation · esc cancels · 42 earlier messages"), table.concat(rows, "\n"))
-        assert.is_nil(screen.find("█"))
         assert.is_nil(screen.find("Working ("))
         uji.input.set("half a thought")
         screen.typing("hello")

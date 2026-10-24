@@ -197,7 +197,7 @@ The default theme has these styles.
 | `error` | Errors and failed tool output. | `error` |
 | `notice` | A notice a `uji.ui.Notice` draws. | `notice` |
 | `warning` | A warning drawn above the input, such as a deprecated plugin. | `warning` |
-| `cursor` | The cursor. | `cursor`, blink |
+| `cursor` | The cursor block, drawn over the character it sits on. | `cursor` on `cursor`, blink |
 | `input` | Text on the input line. | `text` |
 | `border` | Borders. | `muted` |
 | `reverse` | Selected text and the copy message. | reverse |
@@ -211,7 +211,7 @@ The default theme has these styles.
 | `syntax.keyword`, `syntax.string`, `syntax.number`, `syntax.comment`, `syntax.func`, `syntax.type`, `syntax.constant` | Highlighted code, in replies and in diffs. | the `syntax` colour of the same name, `syntax.comment` in italic |
 | `selection` | Text you select with the mouse. | reverse |
 | `call.label`, `call.detail` | A tool call's name and, in brackets after it, its subject. | `text`, bold, and `text` |
-| `call.running`, `call.done`, `call.failed` | The mark before a tool call while it runs, after it worked and after it failed. | `muted`, `call.done`, `error` |
+| `call.running`, `call.done`, `call.failed` | The mark before a tool call while it runs, after it worked and after it failed. `call.done` also marks a job that finished. | `muted`, `call.done`, `error` |
 | `diff.added`, `diff.removed` | Added and removed lines in a diff, across the whole row. | on `diff.added_bg`, `text` on `diff.removed_bg` |
 | `diff.added_sign`, `diff.removed_sign` | The number and the `+` or `-` of those lines. | `diff.added` on `diff.added_bg`, `diff.removed` on `diff.removed_bg` |
 | `diff.added_word`, `diff.removed_word` | The words that changed on those lines, merged on top. | on `diff.added_word_bg`, on `diff.removed_word_bg` |
@@ -230,6 +230,7 @@ The default theme has these styles.
 | `symbols.thinking` | The bar beside the model's thinking. | `│` |
 | `symbols.queued` | The mark before a queued message. | `›` |
 | `symbols.running` | The mark before the tool that is running, and before a job in the panel under the input. | `⋯` |
+| `symbols.done` | The mark before a job in the panel that finished cleanly. | `✓` |
 | `symbols.failed` | The mark before a job in the panel that failed or was stopped. | `✗` |
 | `symbols.separator` | The mark between the parts of the status line. | `·` |
 | `symbols.jump` | The arrow on the jump to the bottom. | `↓` |
@@ -237,7 +238,6 @@ The default theme has these styles.
 | `symbols.quote` | The bar beside a quote. | `│` |
 | `symbols.column` | The line between table columns. | `│` |
 | `symbols.task_done`, `symbols.task_open` | The marks of a done and an open task. | `[x]`, `[ ]` |
-| `symbols.cursor` | The cursor in the input line and in pickers. | `█` |
 | `symbols.input` | The mark in front of each row of the input line, in the `accent` style. | `""` |
 | `symbols.mask` | What hidden input, such as a key, shows instead of each character. | `•` |
 | `symbols.pointer` | The mark beside the chosen item in a list or an approval. | `›` |
@@ -254,7 +254,7 @@ The default theme has these styles.
 | `text.confirm_allow`, `text.confirm_deny` | The rest of each approval answer, after `confirm_yes` and `confirm_no`. | `"proceed"`, `"and tell uji what to do differently"` |
 | `text.scroll` | The line an approval shows when its details do not fit. | `"lines %d-%d of %d, scroll for more"` |
 | `text.working` | The line shown while the model works. `%d` is the seconds so far. | `"Working (%ds)"` |
-| `text.job` | The name of a background job wherever uji shows one: the panel under the input, `/jobs`, its notices and the `job_output` and `stop_job` lines. `%d` is its number. | `"job %d"` |
+| `text.job` | The name of a background job wherever uji shows one: the panel under the input, its notices and the `job_output` and `stop_job` lines. `%d` is its number. | `"job %d"` |
 | `text.jobs_hint` | The line under the input once a job finishes, naming where its output went. | `"/jobs to see finished jobs"` |
 | `text.added`, `text.removed` | The parts of the line above a diff, joined by a comma when both are there. `%d` is the count and `%s` is `text.line` or `text.lines`. The line starts with a capital letter. | `"Added %d %s"`, `"removed %d %s"` |
 | `text.line`, `text.lines` | The word for one line and for more. | `"line"`, `"lines"` |

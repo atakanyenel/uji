@@ -245,7 +245,14 @@ describe("themes", function()
         app.session:append({ type = "user", text = "hello" })
         local rows = screen.rows(true)
         assert.equal("1" .. string.rep("=", 38) .. "2", rows[1])
-        assert.equal("| C", rows[2]:sub(1, 3))
+        assert.equal("|", rows[2]:sub(1, 1))
+        local marked
+        for _, run in ipairs(screen.runs()) do
+            if run.bg == "#707070" then
+                marked = true
+            end
+        end
+        assert.is_true(marked, "the cursor takes the theme's cursor colour")
         assert.is_true(has(rows[5], "hello"))
         assert.is_false(has(rows[10], "─"))
     end)
@@ -333,7 +340,7 @@ describe("themes", function()
         local rows = screen.rows(true)
         assert.equal("A         B    C           D", rows[1]:gsub("%s+$", ""))
         assert.equal("E", rows[9]:gsub("%s+$", ""))
-        assert.equal(" █", rows[10]:gsub("%s+$", ""))
+        assert.equal("", rows[10]:gsub("%s+$", ""))
     end)
 
     it("puts toolbar items in the sections the screen shows, in the order they were declared", { size = { 40, 10 } }, function()
@@ -357,7 +364,7 @@ describe("themes", function()
         local rows = screen.rows(true)
         assert.equal("banner" .. string.rep(" ", 31) .. "tag", rows[1])
         assert.equal(string.rep("─", 40), rows[6])
-        assert.equal(" █", rows[7]:gsub("%s+$", ""))
+        assert.equal("", rows[7]:gsub("%s+$", ""))
         assert.equal(string.rep("─", 40), rows[8])
         assert.equal("first", rows[9]:gsub("%s+$", ""))
         assert.equal("second", rows[10]:gsub("%s+$", ""))
@@ -592,7 +599,7 @@ describe("themes", function()
         end
         ui:present(Select({ title = "Pick one", items = items }))
         local select = look()
-        assert.is_true(has(select, "  ? C"))
+        assert.is_true(has(select, "  ? "))
         assert.is_true(has(select, "P> item-1"))
         assert.is_true(has(select, "item-4"))
         assert.is_false(has(select, "item-5"))
@@ -600,7 +607,7 @@ describe("themes", function()
         assert.equal(#select:match("([^\n]*)item%-2"), #select:match("([^\n]*)1 to 4 / 6"), "the range lines up with the items")
         ui.modal:close()
         ui:present(Prompt({ title = "Key", value = "secret", hidden = true }))
-        assert.is_true(has(look(), "  ? ******C"))
+        assert.is_true(has(look(), "  ? ******"))
         ui.modal:close()
         local body = {}
         for index = 1, 30 do
@@ -619,7 +626,7 @@ describe("themes", function()
         local pick = look()
         assert.is_true(has(pick, "1 Files ="))
         assert.is_true(has(pick, "|? a.lua"))
-        assert.is_true(has(pick, "|? C   2/2"))
+        assert.is_true(has(pick, "2/2"))
         ui.modal:close()
         ui:present(Select({ title = "Done", items = { "x" } }))
         ui.modal:close()
@@ -848,9 +855,9 @@ return require("uji.themes.default")({
             end
             return found
         end
-        assert.same({ none = true }, backgrounds())
+        assert.same({ none = true, White = true }, backgrounds())
         uji.ui.configure({ theme = default({ colors = { background = ito.rgb(0x0a0b0c) } }) })
-        assert.same({ ["#0A0B0C"] = true }, backgrounds())
+        assert.same({ ["#0A0B0C"] = true, White = true }, backgrounds())
         for _, modal in ipairs({ Select({ title = "Pick", items = { "a", "b" } }), Pick({ title = "Find", items = { "a", "b" } }) }) do
             ui:present(modal)
             local found = backgrounds()

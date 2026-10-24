@@ -2,7 +2,6 @@ local class = require("uji.core.class")
 local ito = require("ito")
 local jobs = require("uji.core.jobs")
 local keys = require("uji.core.ui.keys")
-local list = require("uji.utils.list")
 local sys = require("uji.sys")
 local task = require("uji.core.task")
 
@@ -16,15 +15,20 @@ function Jobs:init(ui)
     self.rows = {}
     self.selected = nil
     self.dropped = {}
+    self.all = false
     self.hint = nil
     ito.observable(self)
+end
+
+local function worked(job)
+    return job.state == "finished" and job.code == 0
 end
 
 local function showing(job, now)
     if job.state == "running" then
         return true
     end
-    if job.state == "finished" and job.code == 0 then
+    if worked(job) then
         return false
     end
     return job.ended == nil or now - job.ended < LINGER
@@ -33,19 +37,24 @@ end
 function Jobs:refresh()
     local rows, now = {}, sys.os.clock()
     for _, job in ipairs(jobs.list()) do
-        if showing(job, now) and not self.dropped[job.id] then
-            rows = list.appended(rows, {
+        if (self.all or showing(job, now)) and not self.dropped[job.id] then
+            local live = job.state == "running"
+            rows[#rows + 1] = {
                 id = job.id,
                 name = string.format(self.ui.theme.tokens.text.job, job.id),
                 detail = job.command,
                 elapsed = math.floor((job.ended or now) - job.started),
-                running = job.state == "running",
-            })
+                running = live,
+                failed = not live and not worked(job),
+            }
         end
     end
     table.sort(rows, function(left, right)
         if left.running ~= right.running then
             return left.running
+        end
+        if self.all then
+            return left.id > right.id
         end
         return left.id < right.id
     end)
@@ -56,7 +65,17 @@ function Jobs:refresh()
 end
 
 function Jobs:busy()
-    return #jobs.running() > 0 or #self.rows > 0
+    return #jobs.running() > 0 or (#self.rows > 0 and not self.all)
+end
+
+function Jobs:show()
+    self.all, self.dropped, self.hint, self.selected = true, {}, nil, nil
+    self:refresh()
+end
+
+function Jobs:close()
+    self.all, self.selected = false, nil
+    self:refresh()
 end
 
 function Jobs:index()
@@ -69,16 +88,22 @@ end
 
 function Jobs:key(chord, writing)
     local key = chord.key
-    if #self.rows == 0 or writing then
-        return false
-    end
-    if keys.is_char(chord) and key ~= "x" then
-        self.selected = nil
-        return false
-    end
     local at = self:index()
+    local typing = keys.is_char(chord) and (key ~= "x" or not at)
+    if writing or typing then
+        if self.all then
+            self:close()
+        else
+            self.selected = nil
+        end
+        return false
+    end
+    if key == "esc" and self.all then
+        self:close()
+        return true
+    end
     if not at then
-        if key ~= "up" then
+        if #self.rows == 0 or key ~= "up" then
             self.selected = nil
             return false
         end
@@ -124,7 +149,7 @@ function Jobs:open(row)
 end
 
 function Jobs:finished(job)
-    if job.state ~= "finished" or job.code ~= 0 then
+    if not worked(job) then
         return
     end
     local shown = { text = self.ui.theme.tokens.text.jobs_hint }

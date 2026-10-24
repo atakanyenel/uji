@@ -11,15 +11,16 @@ the model. A command becomes a background job in one of three ways:
 - You press Ctrl+Z while the command runs, and the model's turn carries on at
   once.
 
-While a job runs, the footer shows a line for it with its latest output. When
-it ends, uji shows a notice and tells the model the exit code and the last
-lines of output. If no turn is running, uji starts one so the model can react;
-otherwise the report goes with the next turn. A job that you or the model stop
-starts no turn.
+While a job runs, a row under the input shows its command and how long it has
+run. When it ends, uji shows a notice and tells the model the exit code and the
+last lines of output. If no turn is running, uji starts one so the model can
+react; otherwise the report goes with the next turn. A job that you or the
+model stop starts no turn.
 
 The model reads a job's output with the `job_output` tool and stops it with
-`stop_job`. `/jobs` lists the jobs, running first, with the latest output in the
-preview, and Enter stops the highlighted job.
+`stop_job`. `/jobs` lists the jobs under the input, running ones first, and
+keeps them there until you type or press Esc. Pick one with ↑; Enter opens its
+output, and `x` stops a running job or drops a finished one.
 
 A background job stops after 30 minutes, or after the `timeout` the model gives
 with `run_in_background`, and never runs longer than two hours. At most 8 jobs
@@ -46,12 +47,10 @@ Returns one table per background job, oldest first, with these fields:
 Stops a running job and returns `true`. Returns `false` when no job with that
 id is running.
 
-## uji.jobs.pick()
+## uji.jobs.show()
 
-Shows the jobs in a picker, running ones first with their latest output in the
-preview, and stops a running job you pick. `/jobs` runs this. Returns the job
-picked, or `nil` when there is nothing to pick, and notices when there are no
-jobs at all.
+Lists the jobs under the input, running ones first and then the newest. `/jobs`
+runs this, and it notices when there are no jobs at all.
 
 ## uji.jobs.configure(opts)
 

@@ -37,7 +37,7 @@ lists the environment variables that do the same.
 | `/sync` | Updates installed packs and reloads. |
 | `/reload` | Starts uji again with your current config and files, keeping the conversation and your draft. |
 | `/help` | Lists every command, including the ones plugins add. |
-| `/jobs` | Lists the background jobs, running first, with the latest output of each. Enter stops the highlighted job. |
+| `/jobs` | Lists the background jobs under the input, finished ones included. ↑ picks one; Enter opens it, `x` stops or drops it, Esc closes the list. |
 | `/diagnostics` | Lists the errors uji ran into while drawing the screen, newest first, with the details of each. |
 | `/quit` | Quits. |
 

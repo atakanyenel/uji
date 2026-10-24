@@ -13,12 +13,15 @@ return ito.view(function()
     end
     return ito.VStack(list.mapped(jobs.rows, function(row)
         local selected = jobs.selected == row.id
-        local live = row.running
+        local glyph, style = ctx.symbols.done, ctx.styles.call.done
+        if row.running then
+            glyph, style = ctx.symbols.running, ctx.styles.accent
+        elseif row.failed then
+            glyph, style = ctx.symbols.failed, ctx.styles.error
+        end
         return ito.HStack({
             ito.Text(ctx.symbols.pointer):style(ctx.styles.confirm_selected):padding({ trailing = 1 }):invisible(not selected),
-            ito.Text(live and ctx.symbols.running or ctx.symbols.failed)
-                :style(live and ctx.styles.accent or ctx.styles.error)
-                :padding({ trailing = 1 }),
+            ito.Text(glyph):style(style):padding({ trailing = 1 }),
             ito.Text(row.name):style(ctx.styles.accent),
             ito.Text("  " .. row.detail):style(ctx.styles.muted):grow(),
             ito.Text(row.elapsed .. "s"):style(ctx.styles.dim):padding({ trailing = 1 }),

@@ -159,15 +159,12 @@ it("names jobs in the theme's words and reports a stopped one in the chat", { si
     end)
     assert.is_nil(screen.find("run 1  echo hi; sleep 5  hi"), "the footer leaves a running job alone")
     assert.is_not_nil(screen.find("run 1  echo hi; sleep 5"), "the panel lists the running job")
-    local asked
-    uji.ui.pick = function(opts)
-        asked = opts
-        return opts.items[1]
-    end
-    require("uji.core.command").run("jobs")
-    assert.is_true(has(asked.label(asked.items[1]), "run 1  running for"))
     assert.equal("run 1", tool.detail(tool.get("stop_job"), { id = 1 }))
-    assert.same({ "hi" }, asked.preview(asked.items[1]))
+    require("uji.core.command").run("jobs")
+    assert.is_nil(ui.jobs.selected, "/jobs shows the list without picking one")
+    screen.press("up")
+    assert.equal(1, ui.jobs.selected)
+    screen.press("x")
     eventually(ended)
     assert.equal("stopped", uji.jobs.list()[1].state)
     eventually(function()
@@ -177,12 +174,8 @@ it("names jobs in the theme's words and reports a stopped one in the chat", { si
     assert.is_nil(ui.flashed, "a stopped job joins the chat, not the notices")
 end)
 
-it("shows the running jobs first, then the newest", { timeout = 10 }, function()
+it("shows the finished jobs below the input, running ones first and then the newest", { size = { 80, 12 }, timeout = 10 }, function()
     uji.jobs.configure({ wake = false })
-    local asked
-    uji.ui.pick = function(opts)
-        asked = opts
-    end
     jobs.start({ command = "echo one", background = true })
     jobs.start({ command = "echo two", background = true })
     jobs.start({ command = "sleep 5", background = true })
@@ -193,10 +186,19 @@ it("shows the running jobs first, then the newest", { timeout = 10 }, function()
     require("uji.core.command").run("jobs")
     assert.same(
         { 3, 2, 1 },
-        list.mapped(asked.items, function(job)
+        list.mapped(ui.jobs.rows, function(job)
             return job.id
         end)
     )
+    assert.is_not_nil(screen.find("✓ job 2  echo two"), "a job that worked is ticked, not crossed")
+    screen.press("esc")
+    assert.is_nil(screen.find("job 1  echo one"), "esc closes the list")
+    assert.is_not_nil(screen.find("job 3  sleep 5"), "the running job keeps its row")
+    require("uji.core.command").run("jobs")
+    screen.typing("x")
+    assert.is_nil(screen.find("job 1  echo one"), "typing closes the list")
+    assert.equal("x", ui.composer:text(), "and the letter goes to the prompt")
+    assert.equal("running", uji.jobs.list()[3].state, "with nothing picked, x does not stop a job")
 end)
 
 it("waits for your next message when waking is off", { timeout = 10 }, function()
@@ -275,6 +277,8 @@ it("selects a job below the input, opens it, stops it and drops its row", { size
     eventually(function()
         return screen.find("✗ job 1") == nil
     end)
+    require("uji.core.command").run("jobs")
+    assert.is_not_nil(screen.find("✗ job 1"), "/jobs brings a dropped row back")
 end)
 
 it("says where a finished job went", { size = { 80, 12 }, timeout = 10 }, function()

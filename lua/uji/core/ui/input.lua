@@ -1,5 +1,6 @@
 local host = require("uji.core.ui.host")
 local ito = require("ito")
+local typed = require("uji.core.ui.typed")
 
 return ito.view(function()
     local ui = host.Host.current
@@ -13,7 +14,7 @@ return ito.view(function()
     local near = line.text:sub(from + 1, ito.text.line_end(line.text, anchor, around))
     local shown = { { near } }
     if composing then
-        shown = ctx:typed({ text = near, cursor = line.cursor - from }, { text = styles.input, cursor = styles.cursor })
+        shown = typed.spans(ctx, { text = near, cursor = line.cursor - from }, { text = styles.input, cursor = styles.cursor })
     end
     return ito.HStack({
         ito.Text(ctx.symbols.input):style(styles.accent):repeating(),
