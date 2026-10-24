@@ -1,5 +1,9 @@
 # statusline
 
+Deprecated: uji draws its own status line now, with the directory, model,
+reasoning effort, running jobs and context. The views below still work for
+custom bars.
+
 Views for status lines. `setup` declares the default bar as a
 [`bottom_bar` item](../ito/toolbars.md), with the directory, model, reasoning
 effort, context use, tokens, cache hit rate and turns. Calling it again

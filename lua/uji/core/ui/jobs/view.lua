@@ -25,9 +25,11 @@ return ito.view(function()
             ito.Text(row.name):style(ctx.styles.accent),
             ito.Text("  " .. row.detail):style(ctx.styles.muted):grow(),
             ito.Text(row.elapsed .. "s"):style(ctx.styles.dim):padding({ trailing = 1 }),
-        }):on_tap(function()
-            jobs.selected = row.id
-            jobs:open(row)
-        end)
+        })
+            :on_tap(function()
+                jobs.selected = row.id
+                jobs:open(row)
+            end)
+            :hover(ctx.styles.selected)
     end))
 end)

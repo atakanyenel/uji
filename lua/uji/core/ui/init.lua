@@ -594,6 +594,9 @@ function Ui:mouse(incoming)
             end
             self:invalidate()
         end)
+    elseif kind == "move" then
+        window:move(incoming.row, incoming.col)
+        return
     else
         return
     end

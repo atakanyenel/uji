@@ -192,6 +192,16 @@ ito.Text("[run the tests]"):on_tap(function()
 end)
 ```
 
+## :hover(style)
+
+Draws `style` over the view while the mouse pointer is on it, so a clickable
+view looks like one. It takes an `ito.TextStyle` or an `ito.Color`, which sets
+the background, and the text keeps its own colours.
+
+```lua
+ito.Text("[run the tests]"):on_tap(run):hover(ito.theme().styles.selected)
+```
+
 ## Colours
 
 A colour is an `ito.Color` value. `ito.rgb(0xff8800)` gives one from its red,

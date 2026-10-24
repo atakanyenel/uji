@@ -295,6 +295,61 @@ it("opens a job with a tap", { size = { 80, 12 }, timeout = 10 }, function()
     assert.is_nil(ui.modal, "esc closes it")
 end)
 
+it("lights a job row while the pointer is on it", { size = { 80, 12 }, timeout = 10 }, function()
+    uji.jobs.configure({ wake = false })
+    jobs.start({ command = "sleep 5", cwd = sandbox.work, background = true })
+    eventually(function()
+        return screen.find("job 1  sleep 5") ~= nil
+    end)
+    local row
+    local rows = screen.rows()
+    for index = #rows, 1, -1 do
+        if rows[index]:find("job 1  sleep 5", 1, true) then
+            row = index - 1
+            break
+        end
+    end
+    local function painted()
+        for _, span in ipairs(ui.screen:spans(row)) do
+            if span.text:find("sleep 5", 1, true) then
+                return span.bg
+            end
+        end
+    end
+    assert.is_nil(painted())
+    ui:mouse({ kind = "move", row = row, col = 6 })
+    screen.rows()
+    assert.equal("#3A3A4A", painted())
+    ui:mouse({ kind = "move", row = 0, col = 0 })
+    screen.rows()
+    assert.is_nil(painted())
+end)
+
+it("puts a running jobs button on the status line", { size = { 120, 12 }, timeout = 10 }, function()
+    uji.jobs.configure({ wake = false })
+    jobs.start({ command = "sleep 5", cwd = sandbox.work, background = true })
+    eventually(function()
+        return screen.find("1 job") ~= nil
+    end)
+    local row = screen.find("1 job")
+    local col = screen.rows()[row + 1]:find("1 job", 1, true) - 1
+    local function painted()
+        for _, span in ipairs(ui.screen:spans(row)) do
+            if span.text:find("1 job", 1, true) then
+                return span.bg
+            end
+        end
+    end
+    assert.is_nil(painted())
+    ui:mouse({ kind = "move", row = row, col = col })
+    screen.rows()
+    assert.equal("#3A3A4A", painted())
+    ui:mouse({ kind = "down", button = "left", row = row, col = col })
+    ui:mouse({ kind = "up", button = "left", row = row, col = col })
+    screen.pump()
+    assert.equal(1, ui.jobs.selected, "the button opens the list")
+end)
+
 it("says where a finished job went", { size = { 80, 12 }, timeout = 10 }, function()
     uji.jobs.configure({ wake = false })
     jobs.start({ command = "echo hi", cwd = sandbox.work, background = true })
