@@ -8,5 +8,5 @@
   |1+1 fg=White bg=White blink
  6|────────────────────────────────────────────────────────────────────────────────
   |0+80 fg=#808080
- 7| /work/project  ·  glm-5  ·  high
-  |1+13 fg=#808080; 14+5 fg=#808080 dim; 19+5 fg=Cyan bold; 24+5 fg=#808080 dim; 29+4 fg=#808080
+ 7| /work/project  ·  glm-5  ·  high effort
+  |1+13 fg=Cyan bold; 14+5 fg=#808080; 19+5 fg=#DCDCAA bold; 24+5 fg=#808080; 29+11 fg=#569CD6 bold

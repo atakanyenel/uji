@@ -321,6 +321,8 @@ gives a fresh view of that part:
 |---|---|
 | `screen.transcript()` | The messages. |
 | `screen.composer()` | The input line, or the approval question, which takes the input line's place while it is open. |
+| `screen.jobs()` | The jobs below the input; takes no room while no job is shown. |
+| `screen.status()` | The status line, or the bar a plugin set with `uji.ui.status`. |
 | `screen.modals()` | The lists to choose from, the prompts, the command suggestions and overlays opened with `float = false`. They take no room while none is open, and on a screen without this part they float in a box instead. |
 | `screen.activity()` | The line shown while the model works, with no room while the model is idle. |
 | `screen.greeting()` | The theme's [`uji.ui.Greeting`](#views). |
@@ -347,6 +349,8 @@ return require("uji.themes.default")({
         ito.ToolbarItems(placement.keyboard, ito.HStack),
         screen.transcript():grow(),
         screen.activity(),
+        screen.jobs(),
+        screen.status(),
         ito.ToolbarItems(placement.bottom_bar, ito.HStack),
       })
     end,
@@ -371,6 +375,8 @@ function(screen)
     screen.modals(),
     ito.ToolbarItems(placement.keyboard),
     screen.composer():border(ito.theme().borders.plain, { edges = ito.Edges.horizontal }),
+    screen.jobs(),
+    screen.status(),
     ito.ToolbarItems(placement.bottom_bar),
   })
 end

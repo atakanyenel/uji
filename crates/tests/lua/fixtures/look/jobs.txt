@@ -15,4 +15,4 @@
 10|  ✗ job 1  pytest -q                                                        64s
   |2+1 fg=Red; 4+5 fg=Cyan bold; 9+11 fg=#808080; 76+3 fg=#808080 dim
 11| /work/project
-  |1+13 fg=#808080
+  |1+13 fg=Cyan bold

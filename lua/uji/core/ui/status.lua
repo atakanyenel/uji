@@ -26,17 +26,17 @@ return ito.view(function()
     local row = {}
     local function add(view)
         if #row > 0 then
-            row[#row + 1] = ito.Text("  " .. ctx.symbols.separator .. "  "):style(ctx.styles.dim)
+            row[#row + 1] = ito.Text("  " .. ctx.symbols.separator .. "  "):style(ctx.styles.muted)
         end
         row[#row + 1] = view
     end
-    add(ito.Text(sys.os.shorten(session.directory)):style(ctx.styles.muted))
+    add(ito.Text(sys.os.shorten(session.directory)):style(ctx.styles.syntax.keyword):bold())
     local current = model.current
     if current.model ~= "" then
-        add(ito.Text(current.model):style(ctx.styles.accent))
+        add(ito.Text(current.model):style(ctx.styles.syntax.func):bold())
     end
     if current.effort and current.effort ~= "off" then
-        add(ito.Text(current.effort):style(ctx.styles.muted))
+        add(ito.Text(current.effort .. " effort"):style(ctx.styles.syntax.constant):bold())
     end
     local running = #jobs.running()
     if running > 0 then
@@ -51,7 +51,7 @@ return ito.view(function()
     local usable = budget and model.usable(budget)
     if usable and usable > 0 then
         local pct = math.floor(session:used_tokens() / usable * 100 + 0.5)
-        add(ito.Text(string.format("context %d%%", pct)):style(pct >= CROWDED and ctx.styles.notice or ctx.styles.muted))
+        add(ito.Text(string.format("context %d%%", pct)):style(pct >= CROWDED and ctx.styles.notice or ctx.styles.syntax.string):bold())
     end
     return ito.HStack(row):padding({ horizontal = 1 }):height(1)
 end)
