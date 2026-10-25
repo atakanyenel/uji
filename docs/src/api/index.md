@@ -142,7 +142,7 @@ Every function lives under the global `uji` table. A function that finishes late
 | [`uji.job.start(opts)`](job.md#ujijobstartopts) | Starts a process and returns a job table. |
 | [`uji.jobs.list()`](jobs.md#ujijobslist) | Returns the background jobs. |
 | [`uji.jobs.stop(id)`](jobs.md#ujijobsstopid) | Stops a running background job. |
-| [`uji.jobs.show()`](jobs.md#ujijobsshow) | Lists the jobs under the input, running ones first. |
+| [`uji.jobs.show()`](jobs.md#ujijobsshow) | Opens the jobs list under the input, running ones first. |
 | [`uji.jobs.configure(opts)`](jobs.md#ujijobsconfigureopts) | Sets whether a finished job wakes the model, how many jobs run at once, and how long they may run. |
 
 ## HTTP

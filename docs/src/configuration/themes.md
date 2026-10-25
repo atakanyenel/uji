@@ -229,9 +229,10 @@ The default theme has these styles.
 | `symbols.notice` | The mark `uji.ui.Notice` puts before its text. | `!` |
 | `symbols.thinking` | The bar beside the model's thinking. | `│` |
 | `symbols.queued` | The mark before a queued message. | `›` |
-| `symbols.running` | The mark before the tool that is running, and before a job in the panel under the input. | `⋯` |
-| `symbols.done` | The mark before a job in the panel that finished cleanly. | `✓` |
-| `symbols.failed` | The mark before a job in the panel that failed or was stopped. | `✗` |
+| `symbols.running` | The mark before the tool that is running, and before a job that runs in the jobs list. | `⋯` |
+| `symbols.done` | The mark before a job in the jobs list that finished cleanly. | `✓` |
+| `symbols.stopped` | The mark before a job in the jobs list that you stopped. | `⊘` |
+| `symbols.failed` | The mark before a job in the jobs list that failed or timed out. | `✗` |
 | `symbols.separator` | The mark between the parts of the status line. | `·` |
 | `symbols.jump` | The arrow on the jump to the bottom. | `↓` |
 | `symbols.bullets` | The bullets of each list level, used in turn. | `• ◦ ▪` |
@@ -254,8 +255,12 @@ The default theme has these styles.
 | `text.confirm_allow`, `text.confirm_deny` | The rest of each approval answer, after `confirm_yes` and `confirm_no`. | `"proceed"`, `"and tell uji what to do differently"` |
 | `text.scroll` | The line an approval shows when its details do not fit. | `"lines %d-%d of %d, scroll for more"` |
 | `text.working` | The line shown while the model works. `%d` is the seconds so far. | `"Working (%ds)"` |
-| `text.job` | The name of a background job wherever uji shows one: the panel under the input, its notices and the `job_output` and `stop_job` lines. `%d` is its number. | `"job %d"` |
+| `text.job` | The name of a background job wherever uji shows one: the jobs list, its notices and the `job_output` and `stop_job` lines. `%d` is its number. | `"job %d"` |
 | `text.jobs_hint` | The line under the input once a job finishes, naming where its output went. | `"/jobs to see finished jobs"` |
+| `text.jobs_title` | The title of the jobs list that `/jobs` opens. | `"Jobs"` |
+| `text.jobs_count` | The count beside that title. The first number is how many jobs run and the second how many jobs there are, those it names below included. | `"%d/%d running"` |
+| `text.jobs_more` | The line under a full jobs list, after `symbols.more`, naming the jobs it left out. `%d` is the count. | `"%d more"` |
+| `text.output`, `text.stop`, `text.close` | What Enter, `x` and Esc do in the jobs list, after their keys. | `"output"`, `"stop"`, `"close"` |
 | `text.added`, `text.removed` | The parts of the line above a diff, joined by a comma when both are there. `%d` is the count and `%s` is `text.line` or `text.lines`. The line starts with a capital letter. | `"Added %d %s"`, `"removed %d %s"` |
 | `text.line`, `text.lines` | The word for one line and for more. | `"line"`, `"lines"` |
 | `text.copied`, `text.copied_terminal` | The message after you copy a selection. `%d` is the line count. | `"copied %d line(s)"`, `"copied %d line(s) via the terminal"` |
@@ -264,7 +269,8 @@ The default theme has these styles.
 | `text.sessions_title` | The title of `uji list`. `%s` is the directory. | `"Sessions in %s"` |
 | `text.sessions_empty` | What `uji list` says when there is nothing to show. | `"No sessions in current directory"` |
 | `text.column_title`, `text.column_updated`, `text.column_id` | The column heads of `uji list`. | `"TITLE"`, `"UPDATED"`, `"ID"` |
-| `text.key_move`, `text.key_open`, `text.key_quit` | The keys in the hint under `uji list`. | `"↑/↓"`, `"enter"`, `"esc"` |
+| `text.key_move`, `text.key_open`, `text.key_quit` | The keys in the hint under `uji list` and the jobs list. | `"↑/↓"`, `"enter"`, `"esc"` |
+| `text.key_stop` | The key in the jobs list hint that stops the chosen job. | `"x"` |
 | `text.navigate`, `text.resume`, `text.quit` | What those keys do. | `"navigate"`, `"resume"`, `"quit"` |
 | `limits.spinner_interval` | Seconds between spinner frames. | `0.08` |
 | `limits.suggest_rows` | Rows the command suggestions may use. | `5` |
@@ -321,7 +327,7 @@ gives a fresh view of that part:
 |---|---|
 | `screen.transcript()` | The messages. |
 | `screen.composer()` | The input line, or the approval question, which takes the input line's place while it is open. |
-| `screen.jobs()` | The jobs below the input; takes no room while no job is shown. |
+| `screen.jobs()` | The jobs list under the input; takes no room while it is closed. |
 | `screen.status()` | The status line, or the bar a plugin set with `uji.ui.status`. |
 | `screen.modals()` | The lists to choose from, the prompts, the command suggestions and overlays opened with `float = false`. They take no room while none is open, and on a screen without this part they float in a box instead. |
 | `screen.activity()` | The line shown while the model works, with no room while the model is idle. |

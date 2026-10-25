@@ -13,9 +13,10 @@ local Jobs = class()
 function Jobs:init(ui)
     self.ui = ui
     self.rows = {}
+    self.more = 0
+    self.visible = false
     self.selected = nil
     self.dropped = {}
-    self.all = false
     self.hint = nil
     ito.observable(self)
 end
@@ -24,28 +25,20 @@ local function worked(job)
     return job.state == "finished" and job.code == 0
 end
 
-local function showing(job, now)
-    if job.state == "running" then
-        return true
-    end
-    if worked(job) then
-        return false
-    end
-    return job.ended == nil or now - job.ended < LINGER
-end
-
 function Jobs:refresh()
     local rows, now = {}, sys.os.clock()
     for _, job in ipairs(jobs.list()) do
-        if (self.all or showing(job, now)) and not self.dropped[job.id] then
-            local live = job.state == "running"
+        if not self.dropped[job.id] then
+            local running = job.state == "running"
+            local stopped = job.state == "stopped"
             rows[#rows + 1] = {
                 id = job.id,
                 name = string.format(self.ui.theme.tokens.text.job, job.id),
                 detail = job.command,
                 elapsed = math.floor((job.ended or now) - job.started),
-                running = live,
-                failed = not live and not worked(job),
+                running = running,
+                stopped = stopped,
+                failed = not running and not stopped and not worked(job),
             }
         end
     end
@@ -53,29 +46,31 @@ function Jobs:refresh()
         if left.running ~= right.running then
             return left.running
         end
-        if self.all then
-            return left.id > right.id
-        end
-        return left.id < right.id
+        return left.id > right.id
     end)
-    if #rows > ROWS then
+    self.more = math.max(#rows - ROWS, 0)
+    if self.more > 0 then
         rows = { table.unpack(rows, 1, ROWS) }
     end
     self.rows = rows
 end
 
 function Jobs:busy()
-    return #jobs.running() > 0 or (#self.rows > 0 and not self.all)
+    return #jobs.running() > 0
 end
 
 function Jobs:show()
-    self.all, self.dropped, self.hint = true, {}, nil
+    if self.visible then
+        self:close()
+        return
+    end
+    self.visible, self.dropped, self.hint = true, {}, nil
     self:refresh()
     self.selected = self.rows[1] and self.rows[1].id
 end
 
 function Jobs:close()
-    self.all, self.selected = false, nil
+    self.visible, self.selected = false, nil
     self:refresh()
 end
 
@@ -92,20 +87,17 @@ function Jobs:key(chord, writing)
     local at = self:index()
     local typing = keys.is_char(chord) and (key ~= "x" or not at)
     if writing or typing then
-        if self.all then
+        if self.visible then
             self:close()
-        else
-            self.selected = nil
         end
         return false
     end
-    if key == "esc" and self.all then
+    if key == "esc" and self.visible then
         self:close()
         return true
     end
     if not at then
-        if #self.rows == 0 or key ~= "up" then
-            self.selected = nil
+        if not self.visible or #self.rows == 0 or key ~= "up" then
             return false
         end
         self.selected = self.rows[1].id
@@ -115,8 +107,6 @@ function Jobs:key(chord, writing)
         self.selected = self.rows[math.max(at - 1, 1)].id
     elseif key == "down" then
         self.selected = self.rows[at + 1] and self.rows[at + 1].id
-    elseif key == "esc" then
-        self.selected = nil
     elseif key == "enter" then
         self:open(self.rows[at])
     elseif key == "x" then
@@ -130,10 +120,13 @@ end
 function Jobs:stop_or_drop(row)
     if row.running then
         jobs.stop(jobs.get(row.id))
-    else
-        self.dropped[row.id] = true
-        self.selected = nil
-        self:refresh()
+        return
+    end
+    self.dropped[row.id] = true
+    self.selected = nil
+    self:refresh()
+    if #self.rows == 0 then
+        self:close()
     end
 end
 

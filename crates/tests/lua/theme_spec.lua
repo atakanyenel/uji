@@ -4,6 +4,7 @@ local default = require("uji.themes.default")
 local Confirm = require("uji.core.ui.views.confirm")
 local ito = require("ito")
 local fixture = require("support.fixture")
+local jobs = require("uji.core.jobs")
 local model = require("uji.core.model")
 local plugin = require("uji.core.plugin")
 local sandbox = require("support.sandbox")
@@ -61,6 +62,7 @@ local PROBE = default({
         thinking = "H>",
         queued = "Q>",
         running = "R>",
+        stopped = "O>",
         jump = "J>",
         bullets = { "B1", "B2", "B3" },
         quote = "Q|",
@@ -110,10 +112,16 @@ local PROBE = default({
         column_id = "KEY",
         key_move = "up/down",
         key_open = "ret",
+        key_stop = "kill",
         key_quit = "q",
         navigate = "move",
         resume = "open",
         quit = "leave",
+        jobs_title = "Tasks",
+        jobs_count = "%d von %d",
+        output = "read",
+        stop = "halt",
+        close = "away",
     },
     limits = {
         spinner_interval = 0.5,
@@ -139,6 +147,7 @@ local PROBE = default({
             local ctx = ito.theme()
             return ito.VStack({
                 slots.composer():border(ctx.borders.plain),
+                slots.jobs(),
                 slots.transcript():grow(),
                 slots.modals(),
             })
@@ -696,6 +705,22 @@ describe("themes", function()
         assert.is_true(has(empty, "Nothing here"))
         for _, gone in ipairs({ "TITLE", "UPDATED", "navigate", "Sessions in", "┌" }) do
             assert.is_false(has(all .. empty, gone), gone .. " is drawn although the theme replaced it")
+        end
+    end)
+
+    it("draws the jobs list with the theme's words and marks", { size = { 80, 12 } }, function()
+        uji.ui.configure({ theme = PROBE })
+        local now = sys.os.clock()
+        jobs.jobs = { { id = 2, state = "stopped", command = "make", started = now - 4, ended = now } }
+        ui.jobs:refresh()
+        ui.jobs.selected = 2
+        ui.jobs.visible = true
+        ui:paint()
+        for _, shown in ipairs({ "Tasks", "0 von 1", "O>", "ret read", "kill halt", "q away" }) do
+            assert.is_not_nil(screen.find(shown), shown .. " is missing")
+        end
+        for _, gone in ipairs({ "Jobs", "enter output" }) do
+            assert.is_nil(screen.find(gone), gone .. " is drawn although the theme replaced it")
         end
     end)
 

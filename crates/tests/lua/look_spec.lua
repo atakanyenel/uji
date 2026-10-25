@@ -2,6 +2,7 @@ local app = require("uji.core.app")
 local Confirm = require("uji.core.ui.views.confirm")
 local event = require("uji.core.event")
 local fixture = require("support.fixture")
+local jobs = require("uji.core.jobs")
 local model = require("uji.core.model")
 local Pick = require("uji.core.ui.views.pick")
 local plugin = require("uji.core.plugin")
@@ -138,12 +139,16 @@ describe("the default look", function()
         look("status")
     end)
 
-    it("draws the running jobs below the input", { size = { 80, 12 } }, function()
-        ui.jobs.rows = {
-            { id = 2, name = "job 2", detail = "npm run build", elapsed = 12, running = true },
-            { id = 1, name = "job 1", detail = "pytest -q", elapsed = 64, failed = true },
+    it("draws the jobs opened under the input", { size = { 80, 14 } }, function()
+        local now = math.floor(sys.os.clock())
+        jobs.jobs = {
+            { id = 3, state = "running", command = "npm run build", started = now - 12 },
+            { id = 2, state = "finished", code = 2, command = "pytest -q", started = now - 70, ended = now - 64 },
+            { id = 1, state = "stopped", command = "vite", started = now - 130, ended = now - 121 },
         }
-        ui.jobs.selected = 2
+        ui.jobs:refresh()
+        ui.jobs.selected = 3
+        ui.jobs.visible = true
         look("jobs")
     end)
 

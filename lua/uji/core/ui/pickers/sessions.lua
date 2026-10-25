@@ -1,5 +1,5 @@
+local Hints = require("uji.core.ui.views.hints")
 local ito = require("ito")
-local list = require("uji.utils.list")
 
 local GAP = 2
 local RECENT = 10
@@ -39,21 +39,15 @@ local function columns(ctx, values, style)
     }):spacing(GAP)
 end
 
-local function hints(styles, entries)
-    return ito.HStack(list.mapped(entries, function(entry)
-        return ito.HStack({ ito.Text(entry[1]):style(styles.highlight), ito.Text(entry[2]):style(styles.muted) }):spacing(1)
-    end)):spacing(3)
-end
-
 return ito.view(function(props)
     local ctx = ito.theme()
     local styles, words = ctx.styles, ctx.text
     local sessions = props.sessions
     local hint
     if #sessions == 0 then
-        hint = hints(styles, { { words.key_quit, words.quit } })
+        hint = Hints({ { words.key_quit, words.quit } })
     else
-        hint = hints(styles, {
+        hint = Hints({
             { words.key_move, words.navigate },
             { words.key_open, words.resume },
             { words.key_delete, words.delete },

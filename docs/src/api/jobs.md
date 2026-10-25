@@ -11,17 +11,21 @@ the model. A command becomes a background job in one of three ways:
 - You press Ctrl+Z while the command runs, and the model's turn carries on at
   once.
 
-While a job runs, a row under the input shows its command and how long it has
-run. When it ends, uji shows a notice and tells the model the exit code and the
-last lines of output. If no turn is running, uji starts one so the model can
-react; otherwise the report goes with the next turn. A job that you or the
-model stop starts no turn.
+While jobs run, the status line counts them, and the list under the input stays
+out of the way until you open it. When a job ends, uji shows a notice and tells
+the model the exit code and the last lines of output. If no turn is running, uji
+starts one so the model can react; otherwise the report goes with the next turn.
+A job that you or the model stop starts no turn.
 
 The model reads a job's output with the `job_output` tool and stops it with
-`stop_job`. `/jobs` lists the jobs under the input, running ones first, and
-keeps them there until you type or press Esc. It picks the first job; Enter
-opens its output, ↑ and ↓ pick another, and `x` stops a running job or drops a
-finished one.
+`stop_job`. `/jobs` opens a list under the input, running ones first, with a
+title that counts them and a hint that names the keys. Tapping the count on the
+status line opens the same list, and tapping it again closes it; typing or Esc
+closes it too.
+
+The list shows five jobs at a time and names the rest. It picks the first job:
+Enter opens its output, ↑ and ↓ pick another, and `x` stops a running job or
+drops a finished one. Dropping the last job closes the list.
 
 A background job stops after 30 minutes, or after the `timeout` the model gives
 with `run_in_background`, and never runs longer than two hours. At most 8 jobs
@@ -50,9 +54,9 @@ id is running.
 
 ## uji.jobs.show()
 
-Lists the jobs under the input, running ones first and then the newest, and
-picks the first. `/jobs` runs this, and it notices when there are no jobs at
-all.
+Opens the jobs list under the input, running ones first and then the newest,
+and picks the first. Running it again closes the list. `/jobs` runs this, and it
+notices when there are no jobs at all.
 
 ## uji.jobs.configure(opts)
 

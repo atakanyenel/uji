@@ -1,5 +1,5 @@
 uji.command.add("jobs", {
-    desc = "list the background jobs under the input",
+    desc = "open the background jobs list",
     handler = function()
         uji.jobs.show()
     end,
