@@ -1,5 +1,6 @@
 local agent = require("support.agent")
 local app = require("uji.core.app")
+local list = require("uji.utils.list")
 local sandbox = require("support.sandbox")
 local screen = require("support.ui")
 local server = require("support.server")
@@ -270,6 +271,20 @@ it("ends the turn when a running tool is interrupted", { timeout = 20 }, functio
     assert.same({ "error: interrupted by the user while this tool ran" }, agent.tool_results(messages))
     assert.equal("interrupted", agent.last_error(messages))
     assert.equal(1, #mock:turns())
+end)
+
+it("answers the calls a failed turn left open", function()
+    local session = app.session
+    local call = { id = "c1", name = "run_command", arguments = "{}" }
+    session:append({ type = "user", text = "go" })
+    session:append({ type = "assistant", text = "", tool_calls = { call } })
+    app.agent.turn = { calls = { call }, answered = {} }
+    app.agent:failed("loop: boom")
+    local stored = list.mapped(app.agent.session:entries(), function(entry)
+        return entry.message
+    end)
+    assert.same({ "error: uji stopped before this tool returned a result" }, agent.tool_results(stored))
+    assert.equal("loop: boom", agent.last_error(stored))
 end)
 
 it("sends the queued message once the turn is interrupted", { timeout = 20 }, function()

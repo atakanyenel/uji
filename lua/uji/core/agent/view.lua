@@ -1,4 +1,6 @@
+local list = require("uji.utils.list")
 local sys = require("uji.sys")
+local tables = require("uji.core.tables")
 local tokens = require("uji.core.agent.tokens")
 
 local SUMMARY_HEADER = "Summary of the earlier part of this conversation:"
@@ -51,6 +53,43 @@ function M.merge_files(into, extra)
     return into
 end
 
+local function paired(messages)
+    local out, index = {}, 1
+    while index <= #messages do
+        local message = messages[index]
+        local calls = message.type == "assistant" and message.tool_calls or nil
+        if calls and #calls > 0 then
+            local answered, last = {}, index
+            while messages[last + 1] and messages[last + 1].type == "tool" do
+                last = last + 1
+                answered[messages[last].tool_call_id] = true
+            end
+            local kept = list.filtered(calls, function(call)
+                return answered[call.id] == true
+            end)
+            local ids = {}
+            for _, call in ipairs(kept) do
+                ids[call.id] = true
+            end
+            if #kept > 0 or (message.text or "") ~= "" then
+                out[#out + 1] = tables.with(message, "tool_calls", #kept > 0 and kept or nil)
+            end
+            for at = index + 1, last do
+                if ids[messages[at].tool_call_id] then
+                    out[#out + 1] = messages[at]
+                end
+            end
+            index = last + 1
+        else
+            if message.type ~= "tool" then
+                out[#out + 1] = message
+            end
+            index = index + 1
+        end
+    end
+    return out
+end
+
 function M.build(stored)
     local at = tokens.last_compaction(stored)
     local out = {}
@@ -67,7 +106,7 @@ function M.build(stored)
             out[#out + 1] = message
         end
     end
-    return out
+    return paired(out)
 end
 
 local CUTS = { user = true, assistant = true, context = true, error = true }

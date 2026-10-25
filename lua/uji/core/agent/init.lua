@@ -261,8 +261,23 @@ function Agent:start(system, prompt)
     end)
 end
 
+function Agent:answer_open(reason)
+    local turn = self.turn
+    if not turn then
+        return
+    end
+    for _, call in ipairs(turn.calls) do
+        if not turn.answered[call.id] then
+            self:answer(call, self:after_tool(call.name, reason(call)))
+        end
+    end
+end
+
 function Agent:failed(message)
     self:clear_stream()
+    self:answer_open(function()
+        return STOPPED
+    end)
     self:append({ type = "error", text = message })
     self:finish(true)
 end
@@ -639,12 +654,9 @@ function Agent:interrupt()
         end
     end
     self:clear_stream()
-    for _, call in ipairs(turn and turn.calls or {}) do
-        if not turn.answered[call.id] then
-            local content = turn.running == call and WHILE_RUNNING or BEFORE_RUNNING
-            self:answer(call, self:after_tool(call.name, content))
-        end
-    end
+    self:answer_open(function(call)
+        return turn.running == call and WHILE_RUNNING or BEFORE_RUNNING
+    end)
     self:append({ type = "error", text = "interrupted" })
     self:finish(true)
     self:send_queued()
