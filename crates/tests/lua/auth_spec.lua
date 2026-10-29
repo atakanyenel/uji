@@ -784,11 +784,12 @@ it("backs off Copilot polling and stops on denied authorization without saving",
     local copilot = require("uji.core.auth.copilot")
     local chosen = catalog.get("github-copilot")
     local polls, delays = 0, {}
-    local server = Server.start(function()
+    copilot.request = function(url, body)
+        assert.equal(chosen.oauth.device.poll_url, url)
+        assert.equal("private-device", body.device_code)
         polls = polls + 1
-        return json(polls == 1 and { error = "slow_down", interval = 10 } or { error = "access_denied" })
-    end)
-    chosen.oauth.device.poll_url = server.url
+        return polls == 1 and { error = "slow_down", interval = 10 } or { error = "access_denied" }
+    end
     sys.sleep = function(seconds)
         delays[#delays + 1] = seconds
     end

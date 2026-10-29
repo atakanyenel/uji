@@ -1,8 +1,9 @@
 local auth = require("uji.core.auth")
 local copilot = require("uji.core.auth.copilot")
+local list = require("uji.utils.list")
 local tables = require("uji.core.tables")
 
-local function headers(request)
+local function request_headers(request)
     local session = request.auth.oauth
     local headers = copilot.headers(session and session.token)
     headers["Openai-Intent"] = "conversation-edits"
@@ -20,7 +21,7 @@ end
 local function client(Api)
     local Client = uji.class(Api)
     function Client:headers(request, body)
-        return tables.merged(Api.headers(self, request, body), headers(request))
+        return tables.merged(Api.headers(self, request, body), request_headers(request))
     end
     return Client()
 end
@@ -77,10 +78,9 @@ local function models(provider)
         local api = route(entry)
         if type(entry.id) == "string" and capabilities.type == "chat" and supports.tool_calls and api then
             provider.api.routes[entry.id] = api
-            local efforts = {}
-            for _, effort in ipairs(supports.reasoning_effort or {}) do
-                efforts[#efforts + 1] = effort == "none" and "off" or effort
-            end
+            local efforts = list.mapped(supports.reasoning_effort or {}, function(effort)
+                return effort == "none" and "off" or effort
+            end)
             out[#out + 1] = {
                 id = entry.id,
                 context = limits.max_context_window_tokens,
